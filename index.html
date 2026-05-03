@@ -1,831 +1,1934 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FLUX — AI Image Studio</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0c0c0e;
-      --surface: #141416;
-      --border: rgba(255,255,255,0.08);
-      --text: #ededee;
-      --muted: #555;
-      --accent: #e2ff6e;
-      --accent-dim: rgba(226,255,110,0.08);
-      --red: #ff5f5f;
-      --red-dim: rgba(255,95,95,0.08);
-      --amber: #ffb347;
-      --amber-dim: rgba(255,179,71,0.08);
-      --radius: 10px;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Historian Engine — FLUX Edition</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0c0c0f;
+  --surface: #111116;
+  --surface2: #18181f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0f0f5;
+  --text2: #7a7a90;
+  --text3: #4a4a60;
+  --accent: #c8ff00;
+  --accent2: #7c5cff;
+  --red: #ff4f4f;
+  --red-dim: rgba(255,79,79,0.12);
+  --green: #3dffa0;
+  --green-dim: rgba(61,255,160,0.1);
+  --amber: #ffb347;
+  --amber-dim: rgba(255,179,71,0.1);
+  --gold: #FFD700;
+  --radius: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
+  --font: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --nav-w: 80px;
+}
 
-    body {
-      font-family: 'Syne', sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-    }
-    .wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Header */
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1.75rem;
-    }
-    .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-    .logo span { color: var(--accent); }
-    .live-dot {
-      display: flex; align-items: center; gap: 6px;
-      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);
-    }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 2s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  overflow-x: hidden;
+}
 
-    /* Daily counter */
-    .counter-strip {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: .9rem 1.25rem;
-      margin-bottom: 1.5rem; transition: border-color .3s;
-    }
-    .counter-strip.limit { border-color: rgba(255,179,71,.35); background: var(--amber-dim); }
-    .counter-left { display: flex; align-items: baseline; gap: 10px; }
-    .counter-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 32px; font-weight: 500; color: var(--accent); line-height: 1;
-      transition: transform .2s, color .3s;
-    }
-    .counter-num.bump { transform: scale(1.15); }
-    .counter-num.limit { color: var(--amber); }
-    .counter-label { font-size: 13px; color: var(--muted); }
-    .counter-right {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; color: var(--muted); text-align: right; line-height: 1.6;
-    }
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
 
-    /* Daily limit banner */
-    #limit-banner {
-      display: none;
-      background: var(--amber-dim); border: 1px solid rgba(255,179,71,.3);
-      border-radius: var(--radius); padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem; animation: up .3s ease;
-    }
-    #limit-banner .banner-title {
-      font-size: 14px; font-weight: 700; color: var(--amber); margin-bottom: 4px;
-    }
-    #limit-banner .banner-msg { font-size: 13px; color: var(--muted); line-height: 1.6; }
-    #limit-banner .banner-reset {
-      font-family: 'JetBrains Mono', monospace; font-size: 12px;
-      color: var(--amber); margin-top: 8px;
-    }
+/* ════════════════════════════════════
+   LOGIN / AUTH SCREEN
+════════════════════════════════════ */
+#auth-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; flex-direction: column; gap: 0;
+}
 
-    /* Fields */
-    .field { margin-bottom: 1rem; }
-    .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
-    select {
-      width: 100%; background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--text);
-      font-family: 'Syne', sans-serif; font-size: 14px;
-      padding: 10px 36px 10px 12px; outline: none; appearance: none; -webkit-appearance: none;
-      transition: border-color .2s; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
-    }
-    select:focus { border-color: rgba(226,255,110,.3); }
-    select option, select optgroup { background: #1a1a1e; color: var(--text); }
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 28px;
+  padding: 48px 52px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
 
-    /* Prompt */
-    .prompt-wrap {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden; margin-bottom: 1rem;
-      transition: border-color .2s;
-    }
-    .prompt-wrap:focus-within { border-color: rgba(226,255,110,.3); }
-    textarea {
-      width: 100%; background: transparent; border: none; outline: none;
-      color: var(--text); font-family: 'Syne', sans-serif; font-size: 15px;
-      line-height: 1.6; padding: 1rem 1.25rem .75rem; resize: none; min-height: 100px;
-      caret-color: var(--accent);
-    }
-    textarea::placeholder { color: var(--muted); }
-    .chips {
-      display: flex; gap: 6px; flex-wrap: wrap;
-      padding: .6rem 1rem; border-top: 1px solid var(--border);
-    }
-    .chip {
-      font-size: 11px; padding: 3px 9px; border-radius: 100px;
-      border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all .15s;
-    }
-    .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.auth-card::before {
+  content: '';
+  position: absolute; top: -60px; left: -60px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(200,255,0,0.08) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
 
-    /* Controls */
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
-    @media (max-width: 480px) { .controls { grid-template-columns: 1fr 1fr; } }
-    .ctrl { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
-    .ctrl label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
-    .ctrl-val { font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--accent); }
-    .ctrl select { border: none; padding: 0; border-radius: 0; background-image: none; padding-right: 0; font-size: 13px; }
-    input[type="range"] {
-      -webkit-appearance: none; width: 100%; height: 3px;
-      background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; margin-top: 4px;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
-    }
+.auth-logo {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 36px;
+}
+.auth-logo-icon {
+  width: 48px; height: 48px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-logo-icon svg { color: #000; }
+.auth-logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.auth-logo-sub { font-size: 10px; color: var(--text2); font-family: var(--mono); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 2px; }
 
-    /* Button */
-    .btn {
-      width: 100%; padding: 14px; background: var(--accent); color: #0c0c0e;
-      border: none; border-radius: var(--radius); font-family: 'Syne', sans-serif;
-      font-size: 15px; font-weight: 700; cursor: pointer; transition: all .2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-bottom: 1rem;
-    }
-    .btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
-    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-    .spinner {
-      width: 16px; height: 16px; border: 2px solid rgba(0,0,0,.2);
-      border-top-color: #0c0c0e; border-radius: 50%;
-      animation: spin .7s linear infinite; display: none;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.auth-tabs {
+  display: flex; gap: 4px;
+  background: var(--surface2);
+  border-radius: 12px; padding: 4px;
+  margin-bottom: 32px;
+}
+.auth-tab {
+  flex: 1; padding: 10px;
+  border: none; background: none;
+  color: var(--text2); font-family: var(--font);
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  border-radius: 9px; cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
 
-    #status {
-      font-family: 'JetBrains Mono', monospace; font-size: 12px;
-      color: var(--muted); text-align: center; min-height: 16px; margin-bottom: .75rem;
-    }
-    #status.err { color: var(--red); }
+.auth-field { margin-bottom: 20px; }
+.auth-label {
+  display: block; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.15em;
+  color: var(--text2); margin-bottom: 8px; font-family: var(--mono);
+}
+.auth-input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  font-family: var(--font); font-size: 14px; color: var(--text);
+  outline: none; transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: var(--accent); }
 
-    /* Result */
-    #result { display: none; animation: up .35s ease; }
-    @keyframes up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
-    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    #out-img { width: 100%; display: block; }
-    .result-footer {
-      padding: .75rem 1rem; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; gap: .5rem;
-    }
-    .result-meta { font-size: 12px; color: var(--muted); font-style: italic; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .dl-btn {
-      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
-      text-decoration: none; border: 1px solid var(--border); padding: 6px 12px;
-      border-radius: 100px; transition: all .15s; white-space: nowrap;
-    }
-    .dl-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+/* PIN boxes */
+.pin-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-top: 4px;
+}
+.pin-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: 60px;
+  font-size: 26px; font-weight: 800;
+  text-align: center; color: var(--text);
+  font-family: var(--mono);
+  outline: none; transition: border-color 0.2s;
+  width: 100%;
+}
+.pin-box:focus { border-color: var(--accent); }
+.pin-box.filled { border-color: rgba(200,255,0,0.4); color: var(--accent); }
 
-    /* History */
-    #history { margin-top: 1.5rem; display: none; }
-    .history-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 8px; }
-    .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
-    .h-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: all .15s; }
-    .h-thumb:hover { border-color: var(--accent); transform: scale(1.04); }
-    .h-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.auth-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #000;
+  border: none; border-radius: var(--radius-sm);
+  padding: 16px;
+  font-family: var(--font); font-size: 13px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  cursor: pointer; transition: all 0.2s;
+  margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.auth-btn:hover { background: #d4ff1a; transform: translateY(-1px); }
+.auth-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* Retry button shown on non-limit errors */
-    .retry-hint {
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
-      color: var(--muted); text-align: center; margin-top: -8px; margin-bottom: 12px;
-    }
+.auth-err {
+  margin-top: 14px;
+  background: var(--red-dim);
+  border: 1px solid rgba(255,79,79,0.2);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 11px; color: var(--red);
+  font-family: var(--mono); display: none;
+}
+.auth-hint {
+  margin-top: 20px;
+  text-align: center; font-size: 10px; color: var(--text3);
+  font-family: var(--mono); line-height: 1.7;
+}
 
-    /* Auto stress test button */
-    .btn-auto {
-      width: 100%; padding: 13px; background: transparent; color: var(--accent);
-      border: 1px solid var(--accent); border-radius: var(--radius);
-      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: all .2s; display: flex; align-items: center;
-      justify-content: center; gap: 8px; margin-bottom: 1rem;
-    }
-    .btn-auto:hover { background: var(--accent-dim); }
-    .btn-auto.running {
-      background: var(--red-dim); border-color: var(--red); color: var(--red);
-      animation: pulse-border 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse-border {
-      0%,100% { box-shadow: 0 0 0 0 rgba(255,95,95,0); }
-      50%      { box-shadow: 0 0 0 4px rgba(255,95,95,0.15); }
-    }
+/* proxy config section */
+.proxy-banner {
+  background: rgba(200,255,0,0.05);
+  border: 1px solid rgba(200,255,0,0.15);
+  border-radius: 12px; padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 10px; color: rgba(200,255,0,0.7);
+  font-family: var(--mono); line-height: 1.7;
+}
+.proxy-banner strong { color: var(--accent); }
 
-    /* Stress test stats panel */
-    #stress-panel {
-      display: none; background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem;
-      animation: up .3s ease;
-    }
-    #stress-panel.running { border-color: rgba(255,95,95,.25); }
-    .stress-title {
-      font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
-      color: var(--muted); font-weight: 600; margin-bottom: .75rem;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .stress-title .blink-red {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--red);
-      animation: blink 1s ease-in-out infinite;
-    }
-    .stress-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-    }
-    @media (max-width: 480px) { .stress-grid { grid-template-columns: repeat(2, 1fr); } }
-    .stress-stat {
-      background: rgba(255,255,255,.03); border-radius: 8px;
-      padding: 10px; text-align: center;
-    }
-    .stress-stat .sv {
-      font-family: 'JetBrains Mono', monospace; font-size: 22px;
-      font-weight: 500; color: var(--accent); line-height: 1;
-      transition: transform .15s;
-    }
-    .stress-stat .sv.bump { transform: scale(1.2); }
-    .stress-stat .sv.red  { color: var(--red); }
-    .stress-stat .sl {
-      font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em;
-    }
-    .stress-log {
-      margin-top: .75rem; max-height: 120px; overflow-y: auto;
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
-      color: var(--muted); line-height: 1.8;
-    }
-    .stress-log .log-ok   { color: var(--accent); }
-    .stress-log .log-err  { color: var(--red); }
-    .stress-log .log-warn { color: var(--amber); }
-    .stress-log .log-info { color: var(--muted); }
+/* ════════════════════════════════════
+   MAIN APP LAYOUT
+════════════════════════════════════ */
+#app { display: none; width: 100%; }
 
-    /* Auto-generated prompt preview */
-    #auto-prompt-preview {
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
-      color: var(--muted); font-style: italic; margin-top: .5rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-  </style>
+.nav {
+  width: var(--nav-w); min-width: var(--nav-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; padding: 20px 0;
+  gap: 4px; position: fixed; top: 0; left: 0;
+  height: 100vh; z-index: 50;
+}
+.nav-logo {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; flex-shrink: 0;
+}
+.nav-logo svg { color: #000; }
+
+.nav-item {
+  width: 60px; display: flex; flex-direction: column;
+  align-items: center; gap: 5px; padding: 10px 6px;
+  border-radius: 12px; cursor: pointer; transition: all .15s;
+  border: none; background: none; color: var(--text3);
+}
+.nav-item:hover { background: var(--surface2); color: var(--text2); }
+.nav-item.active { background: rgba(200,255,0,0.1); color: var(--accent); }
+.nav-item svg { width: 18px; height: 18px; }
+.nav-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); }
+
+.nav-bottom {
+  margin-top: auto; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; padding-top: 12px;
+  border-top: 1px solid var(--border); width: 100%;
+}
+.nav-user {
+  width: 38px; height: 38px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  font-size: 14px; font-weight: 800; color: var(--accent);
+  position: relative;
+}
+.nav-user:hover { border-color: var(--accent); }
+.nav-user-tip {
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 10px; font-family: var(--mono);
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s; color: var(--text2);
+}
+.nav-user:hover .nav-user-tip { opacity: 1; }
+
+main { margin-left: var(--nav-w); flex: 1; padding: 24px 28px 80px; max-width: 1280px; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; box-shadow: var(--shadow);
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-icon {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.topbar-icon svg { color: #000; }
+.topbar-title { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
+.topbar-sub { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .2em; color: var(--text2); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.sync-pill {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  font-family: var(--mono); color: var(--text2);
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.sync-dot.syncing { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+.sync-dot.synced  { background: var(--green); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 100px;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; border: none;
+  transition: all .15s; white-space: nowrap; font-family: var(--font);
+}
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover:not(:disabled) { background: #d4ff1a; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .3; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-outline:hover { background: var(--surface2); color: var(--text); }
+.btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,79,79,0.2); }
+.btn-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,255,160,0.2); }
+.btn-sm { padding: 6px 12px; font-size: 10px; }
+.btn svg { width: 12px; height: 12px; }
+
+/* ── TABS ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── GENERATE LAYOUT ── */
+.gen-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+@media(max-width:900px){ .gen-grid { grid-template-columns: 1fr; } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 22px;
+}
+.card-title {
+  font-size: 8px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .2em;
+  color: var(--text3); margin-bottom: 18px;
+  font-family: var(--mono);
+}
+
+/* ── FORM ── */
+label.lbl {
+  display: block; font-size: 8px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .15em;
+  color: var(--text3); margin-bottom: 6px; font-family: var(--mono);
+}
+input[type="text"], input[type="password"], input[type="url"], select, textarea {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 14px;
+  font-family: var(--font); font-size: 13px; color: var(--text);
+  outline: none; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: rgba(200,255,0,0.4); }
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4a60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.field { margin-bottom: 16px; }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius); padding: 24px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; cursor: pointer; transition: all .15s; text-align: center;
+  background: var(--surface2);
+}
+.upload-zone:hover { border-color: var(--accent); background: rgba(200,255,0,0.03); }
+.upload-zone-icon {
+  width: 40px; height: 40px;
+  background: var(--surface); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-zone-icon svg { color: var(--text3); }
+.upload-badge {
+  background: var(--accent); color: #000;
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .1em; padding: 4px 10px; border-radius: 100px;
+  font-family: var(--mono);
+}
+
+/* ── TOGGLE ── */
+.toggle-row {
+  display: flex; align-items: center; gap: 12px; padding: 14px;
+  background: var(--surface2); border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.toggle {
+  width: 42px; height: 22px; border-radius: 100px;
+  background: var(--border2); border: none; cursor: pointer;
+  position: relative; transition: background .2s; flex-shrink: 0;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; transition: left .2s;
+}
+.toggle.on::after { left: 23px; }
+.toggle-title { font-size: 12px; font-weight: 600; }
+.toggle-sub { font-size: 10px; color: var(--text2); margin-top: 2px; font-family: var(--mono); }
+
+/* ── ACTION ROW ── */
+.action-row { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ── FEED ── */
+.feed { max-height: 82vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 2px; padding-bottom: 40px; }
+.feed::-webkit-scrollbar { width: 3px; }
+.feed::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+  box-shadow: var(--shadow); transition: box-shadow .15s;
+}
+.result-card:hover { box-shadow: var(--shadow-lg); border-color: var(--border2); }
+.result-inner { display: grid; grid-template-columns: 220px 1fr; }
+@media(max-width:700px){ .result-inner { grid-template-columns: 1fr; } }
+
+.result-img-col {
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 260px; padding: 14px;
+}
+.result-img-col img { max-width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
+.result-img-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: .2; }
+.result-img-placeholder svg { width: 28px; height: 28px; }
+
+.result-content { padding: 18px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.result-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.result-guild { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.result-guild img { width: 16px; height: 16px; border-radius: 50%; }
+.result-guild-name { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text3); font-family: var(--mono); }
+.result-topic { font-size: 13px; font-weight: 700; letter-spacing: -.2px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; font-family: var(--mono); }
+.badge-done { background: rgba(200,255,0,0.1); color: var(--accent); border: 1px solid rgba(200,255,0,0.2); }
+.badge-done::before { content:''; width:5px; height:5px; border-radius:50%; background: var(--green); display:block; }
+.badge-processing { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); animation: pulse 1.5s ease-in-out infinite; }
+.badge-error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,79,79,0.2); }
+.badge-pending { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+
+.overlay-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; }
+.overlay-label { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; color: var(--text3); margin-bottom: 4px; font-family: var(--mono); }
+.overlay-text { font-size: 11px; font-weight: 600; line-height: 1.5; }
+
+.long-text-box { border-left: 2px solid var(--border2); padding-left: 12px; max-height: 180px; overflow-y: auto; }
+.long-text-box p { font-size: 11px; line-height: 1.7; color: var(--text2); }
+.long-text-box::-webkit-scrollbar { width: 2px; }
+.long-text-box::-webkit-scrollbar-thumb { background: var(--border); }
+
+.error-box { background: var(--red-dim); border: 1px solid rgba(255,79,79,0.15); border-radius: 10px; padding: 12px; display: flex; gap: 8px; }
+.error-box svg { color: var(--red); width:14px; height:14px; flex-shrink:0; margin-top:1px; }
+.error-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--red); font-family: var(--mono); }
+.error-msg { font-size: 10px; color: var(--red); font-family: var(--mono); margin-top: 3px; line-height: 1.5; }
+
+.empty-feed {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius); height: 220px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; opacity: .25; color: var(--text2);
+  font-size: 13px; font-weight: 600;
+}
+.empty-feed svg { width: 36px; height: 36px; }
+
+/* ── PROFILES ── */
+.profiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:700px){ .profiles-grid { grid-template-columns: 1fr; } }
+
+.logo-picker {
+  width: 100px; height: 100px;
+  background: var(--surface2); border: 1.5px dashed var(--border2);
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden; transition: all .15s;
+}
+.logo-picker:hover { border-color: var(--accent); }
+.logo-picker img { width: 100%; height: 100%; object-fit: contain; }
+.logo-picker svg { color: var(--text3); }
+
+.guild-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow); transition: all .15s;
+}
+.guild-card:hover { border-color: var(--border2); }
+.guild-logo {
+  width: 50px; height: 50px; background: var(--surface2);
+  border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.guild-logo img { width: 100%; height: 100%; object-fit: contain; }
+.guild-info { flex: 1; min-width: 0; }
+.guild-name { font-size: 13px; font-weight: 700; }
+.guild-id { font-size: 9px; font-family: var(--mono); color: var(--text3); margin-top: 2px; }
+.guild-del { background: none; border: none; cursor: pointer; padding: 7px; border-radius: 8px; color: var(--text3); opacity: 0; transition: all .15s; }
+.guild-card:hover .guild-del { opacity: 1; }
+.guild-del:hover { background: var(--red-dim); color: var(--red); }
+
+/* ── WORKERS TAB ── */
+.wm-wrap { max-width: 680px; }
+
+.wm-active-bar {
+  padding: 14px 18px; background: var(--green-dim);
+  border: 1px solid rgba(61,255,160,0.15);
+  border-radius: 14px; margin-bottom: 20px;
+}
+.wm-active-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: .15em; color: var(--green); font-weight: 700; margin-bottom: 4px; font-family: var(--mono); }
+.wm-active-url { font-family: var(--mono); font-size: 12px; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wm-active-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+.wm-url-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); background: var(--surface); transition: border-color .2s; }
+.wm-url-row.is-active { border-color: rgba(61,255,160,0.3); background: var(--green-dim); }
+.wm-url-row.is-exhausted { border-color: rgba(255,79,79,0.2); background: var(--red-dim); opacity: .7; }
+.wm-url-row.is-idle:hover { border-color: var(--border2); cursor: pointer; }
+.wm-badge { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wm-badge.green { background: var(--green); box-shadow: 0 0 7px rgba(61,255,160,.5); animation: pulse 2s ease-in-out infinite; }
+.wm-badge.amber { background: var(--amber); }
+.wm-badge.red   { background: var(--red); }
+.wm-badge.grey  { background: var(--text3); }
+.wm-info { flex: 1; min-width: 0; }
+.wm-url-text { font-family: var(--mono); font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wm-url-tag { font-size: 9px; margin-top: 2px; font-family: var(--mono); }
+.wm-url-tag.green { color: var(--green); }
+.wm-url-tag.amber { color: var(--amber); }
+.wm-url-tag.red   { color: var(--red); }
+.wm-url-tag.grey  { color: var(--text3); }
+.wm-del { background: none; border: none; cursor: pointer; font-size: 12px; padding: 3px 7px; border-radius: 6px; color: var(--text3); transition: all .15s; }
+.wm-del:hover { color: var(--red); background: var(--red-dim); }
+
+.wm-boxes { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.wm-box { width: 24px; height: 24px; border-radius: 6px; border: 1px solid transparent; position: relative; cursor: default; transition: transform .15s; }
+.wm-box:hover { transform: scale(1.2); z-index: 2; }
+.wm-box.green { background: rgba(61,255,160,.15); border-color: rgba(61,255,160,.3); }
+.wm-box.amber { background: rgba(255,179,71,.15); border-color: rgba(255,179,71,.3); }
+.wm-box.red   { background: rgba(255,79,79,.12); border-color: rgba(255,79,79,.2); }
+.wm-box.grey  { background: var(--surface2); border-color: var(--border); }
+.wm-box.idle-click { cursor: pointer; }
+.wm-box-tip { position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border2); border-radius: 6px; padding: 4px 8px; font-family: var(--mono); font-size: 9px; color: var(--text); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 10; }
+.wm-box:hover .wm-box-tip { opacity: 1; }
+.wm-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.wm-leg { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text3); font-family: var(--mono); }
+.wm-leg-dot { width: 7px; height: 7px; border-radius: 2px; }
+.wm-leg-dot.green { background: rgba(61,255,160,.6); }
+.wm-leg-dot.amber { background: rgba(255,179,71,.6); }
+.wm-leg-dot.red   { background: rgba(255,79,79,.5); }
+.wm-leg-dot.grey  { background: var(--text3); }
+
+.flux-model-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+
+/* ── VAULT / API KEYS ── */
+.settings-wrap { max-width: 680px; }
+.key-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; background: var(--surface2);
+  border-radius: 12px; border: 1px solid var(--border);
+}
+.key-indicator { display: flex; align-items: center; gap: 10px; }
+.key-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(61,255,160,.4); }
+.key-text { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.key-del { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 8px; color: var(--text3); transition: all .15s; }
+.key-del:hover { background: var(--red-dim); color: var(--red); }
+.key-empty { border: 1.5px dashed var(--border); border-radius: 14px; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: .3; color: var(--text2); font-size: 13px; font-weight: 600; }
+.key-empty svg { width: 24px; height: 24px; }
+
+/* ── MISC ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+.section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: var(--text3); margin-bottom: 12px; font-family: var(--mono); }
+.gap-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-box { display: flex; gap: 10px; padding: 12px 14px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); font-size: 11px; color: var(--text2); line-height: 1.6; font-family: var(--mono); }
+.hint-box svg { color: var(--text3); width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; }
+.add-row { display: flex; gap: 8px; }
+
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(200,255,0,.2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+.spinner.sm { width: 10px; height: 10px; border-width: 1.5px; }
+
+/* ── NOTIFICATION ── */
+.notif {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 12px; padding: 12px 20px;
+  font-size: 12px; font-weight: 600; z-index: 9998;
+  opacity: 0; pointer-events: none; transition: all .3s;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; max-width: 90vw;
+  font-family: var(--mono); box-shadow: var(--shadow-lg);
+}
+.notif.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.notif.success { background: var(--green-dim); color: var(--green); border-color: rgba(61,255,160,.2); }
+.notif.error   { background: var(--red-dim);   color: var(--red);   border-color: rgba(255,79,79,.2); }
+.notif.info    { background: var(--surface);   color: var(--text2); }
+
+/* ── SYNC INDICATOR ── */
+.saving-ring {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9px; font-family: var(--mono); color: var(--amber);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+</style>
 </head>
 <body>
-<div class="wrap">
 
-  <header>
-    <div class="logo">FLUX<span>.</span>AI</div>
-    <div class="live-dot"><div class="dot"></div>Workers AI · Live</div>
-  </header>
-
-  <!-- Daily counter -->
-  <div class="counter-strip" id="counter-strip">
-    <div class="counter-left">
-      <div class="counter-num" id="count-num">0</div>
-      <div class="counter-label">images generated today</div>
-    </div>
-    <div class="counter-right" id="count-meta">resets at midnight</div>
-  </div>
-
-  <!-- Daily limit banner (shown ONLY on confirmed 429 + DAILY_LIMIT from server) -->
-  <div id="limit-banner">
-    <div class="banner-title">⏳ Daily free limit reached</div>
-    <div class="banner-msg">Cloudflare Workers AI gives 10,000 free neurons per day. You've used them all up for today — no action needed, it resets automatically.</div>
-    <div class="banner-reset" id="banner-reset"></div>
-  </div>
-
-  <!-- Model -->
-  <div class="field">
-    <label>Model</label>
-    <select id="model" onchange="onModel()">
-      <optgroup label="FLUX — Black Forest Labs">
-        <option value="@cf/black-forest-labs/flux-1-schnell">FLUX.1 Schnell — fastest</option>
-        <option value="@cf/black-forest-labs/flux-2-klein-4b">FLUX.2 Klein 4B — ultra-fast + editing</option>
-        <option value="@cf/black-forest-labs/flux-2-klein-9b">FLUX.2 Klein 9B — enhanced quality</option>
-        <option value="@cf/black-forest-labs/flux-2-dev">FLUX.2 Dev — ultra-realistic</option>
-      </optgroup>
-      <optgroup label="Stable Diffusion">
-        <option value="@cf/bytedance/stable-diffusion-xl-lightning">SDXL Lightning — 1024px fast</option>
-        <option value="@cf/stabilityai/stable-diffusion-xl-base-1.0">SDXL Base 1.0 — high quality</option>
-        <option value="@cf/runwayml/stable-diffusion-v1-5-inpainting">SD v1.5 — classic</option>
-      </optgroup>
-      <optgroup label="Leonardo.Ai">
-        <option value="@cf/leonardo/phoenix-1.0">Leonardo Phoenix — best prompt adherence</option>
-        <option value="@cf/leonardo/lucid-origin">Leonardo Lucid Origin — photorealistic</option>
-      </optgroup>
-      <optgroup label="Artistic">
-        <option value="@cf/lykon/dreamshaper-8-lcm">Dreamshaper 8 LCM — stylized art</option>
-      </optgroup>
-    </select>
-  </div>
-
-  <!-- Prompt -->
-  <div class="prompt-wrap">
-    <textarea id="prompt" placeholder="a hyperrealistic astronaut above neon Tokyo, cinematic lighting, 8k…"></textarea>
-    <div class="chips">
-      <span class="chip" onclick="chip('cinematic lighting')">cinematic lighting</span>
-      <span class="chip" onclick="chip('4k ultra detailed')">4k ultra detailed</span>
-      <span class="chip" onclick="chip('golden hour')">golden hour</span>
-      <span class="chip" onclick="chip('photorealistic')">photorealistic</span>
-      <span class="chip" onclick="chip('anime style')">anime style</span>
-      <span class="chip" onclick="chip('oil painting')">oil painting</span>
-    </div>
-  </div>
-
-  <!-- Controls -->
-  <div class="controls">
-    <div class="ctrl">
-      <label>Aspect Ratio</label>
-      <select id="size">
-        <option value="1024x1024">1:1 Square</option>
-        <option value="1344x768">16:9 Wide</option>
-        <option value="768x1344">9:16 Portrait</option>
-        <option value="1152x896">4:3</option>
-        <option value="896x1152">3:4</option>
-      </select>
-    </div>
-    <div class="ctrl">
-      <label>Steps — <span class="ctrl-val" id="steps-val">4</span></label>
-      <input type="range" id="steps" min="1" max="8" value="4" step="1"
-             oninput="document.getElementById('steps-val').textContent=this.value" />
-    </div>
-    <div class="ctrl" id="ctrl-guidance" style="opacity:.35;pointer-events:none;">
-      <label>Guidance — <span class="ctrl-val" id="guid-val">7</span></label>
-      <input type="range" id="guidance" min="1" max="15" value="7" step=".5"
-             oninput="document.getElementById('guid-val').textContent=this.value" />
-    </div>
-  </div>
-
-  <!-- Generate -->
-  <button class="btn" id="btn" onclick="generate()">
-    <div class="spinner" id="spinner"></div>
-    <span id="btn-label">Generate image</span>
-  </button>
-
-  <!-- Auto Stress Test button -->
-  <button class="btn-auto" id="auto-btn" onclick="toggleAuto()">
-    <span id="auto-icon">⚡</span>
-    <span id="auto-label">Auto Stress Test — find the free limit</span>
-  </button>
-
-  <!-- Stress Test live stats panel -->
-  <div id="stress-panel">
-    <div class="stress-title">
-      <div class="blink-red" id="stress-blink" style="display:none"></div>
-      <span id="stress-panel-title">Stress Test Results</span>
-    </div>
-    <div class="stress-grid">
-      <div class="stress-stat">
-        <div class="sv" id="st-sent">0</div>
-        <div class="sl">Sent</div>
+<!-- ════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
       </div>
-      <div class="stress-stat">
-        <div class="sv" id="st-ok">0</div>
-        <div class="sl">✓ Success</div>
-      </div>
-      <div class="stress-stat">
-        <div class="sv red" id="st-fail">0</div>
-        <div class="sl">✗ Failed</div>
-      </div>
-      <div class="stress-stat">
-        <div class="sv" id="st-rate">—</div>
-        <div class="sl">img / min</div>
+      <div>
+        <div class="auth-logo-text">Historian Engine</div>
+        <div class="auth-logo-sub">Chronicle Automation · FLUX</div>
       </div>
     </div>
-    <div id="auto-prompt-preview"></div>
-    <div class="stress-log" id="stress-log"></div>
-  </div>
 
-  <div id="status"></div>
+    <!-- Proxy config — shown only on first visit -->
+    <div class="proxy-banner" id="proxy-banner" style="display:none">
+      <strong>⚡ First Time Setup</strong><br/>
+      Enter your Cloudflare Proxy Worker URL below. This proxies all storage to GitHub Releases. You only set this once — it's saved globally.
+    </div>
+    <div id="proxy-field" style="display:none;margin-bottom:20px">
+      <label class="auth-label">Cloudflare Proxy Worker URL</label>
+      <input class="auth-input" id="proxy-url-input" type="url" placeholder="https://historian-proxy.yourname.workers.dev/"/>
+    </div>
 
-  <!-- Result -->
-  <div id="result">
-    <div class="result-card">
-      <img id="out-img" alt="Generated" />
-      <div class="result-footer">
-        <div class="result-meta" id="result-meta"></div>
-        <a class="dl-btn" id="dl-btn" download="flux.jpg">↓ Download</a>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthMode('login')">Login</button>
+      <button class="auth-tab" onclick="showAuthMode('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="auth-login">
+      <div class="auth-field">
+        <label class="auth-label">Username</label>
+        <input class="auth-input" id="login-username" type="text" placeholder="your_username" autocomplete="username"/>
       </div>
+      <div class="auth-field">
+        <label class="auth-label">4-Digit PIN</label>
+        <div class="pin-grid">
+          <input class="pin-box" id="lp0" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="lp1" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="lp2" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="lp3" type="password" inputmode="numeric" maxlength="1"/>
+        </div>
+      </div>
+      <button class="auth-btn" id="login-btn" onclick="doLogin()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Enter the Archive
+      </button>
+      <div class="auth-err" id="login-err"></div>
+      <div class="auth-hint">Your session stays active in this browser.<br/>Come back with your code anytime from any device.</div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="auth-register" style="display:none">
+      <div class="auth-field">
+        <label class="auth-label">Choose Username</label>
+        <input class="auth-input" id="reg-username" type="text" placeholder="unique_username" autocomplete="username"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Choose 4-Digit PIN</label>
+        <div class="pin-grid">
+          <input class="pin-box" id="rp0" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="rp1" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="rp2" type="password" inputmode="numeric" maxlength="1"/>
+          <input class="pin-box" id="rp3" type="password" inputmode="numeric" maxlength="1"/>
+        </div>
+      </div>
+      <button class="auth-btn" id="register-btn" onclick="doRegister()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Account
+      </button>
+      <div class="auth-err" id="reg-err"></div>
+      <div class="auth-hint">Your data is stored permanently in GitHub Releases.<br/>Remember your PIN — there's no recovery!</div>
     </div>
   </div>
-
-  <!-- History -->
-  <div id="history">
-    <div class="history-label">Today's generations</div>
-    <div class="history-grid" id="history-grid"></div>
-  </div>
-
 </div>
+
+<!-- ════════════════════════════════════
+     MAIN APP
+════════════════════════════════════ -->
+<div id="app">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+    </div>
+    <button class="nav-item active" data-tab="generate" onclick="switchTab('generate',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      <span class="nav-label">Build</span>
+    </button>
+    <button class="nav-item" data-tab="profiles" onclick="switchTab('profiles',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>
+      <span class="nav-label">Guilds</span>
+    </button>
+    <button class="nav-item" data-tab="workers" onclick="switchTab('workers',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span class="nav-label">Workers</span>
+    </button>
+    <button class="nav-item" data-tab="vault" onclick="switchTab('vault',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+      <span class="nav-label">Vault</span>
+    </button>
+    <div class="nav-bottom">
+      <div class="nav-user" id="nav-user-btn" onclick="logout()">
+        <span id="nav-user-initial">?</span>
+        <div class="nav-user-tip" id="nav-user-tip">Click to logout</div>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+        </div>
+        <div>
+          <div class="topbar-title">Historian Engine</div>
+          <div class="topbar-sub">Chronicle Automation · FLUX Edition</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="sync-pill">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-label">Cloud Ready</span>
+        </div>
+        <button class="btn btn-outline btn-sm" id="folder-btn" onclick="connectFolder()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          <span id="folder-label">PC Folder</span>
+        </button>
+        <button class="btn btn-primary btn-sm" id="export-btn" style="display:none" onclick="exportAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Batch
+        </button>
+      </div>
+    </div>
+
+    <!-- ════ GENERATE TAB ════ -->
+    <div class="tab-panel active" id="tab-generate">
+      <div class="gen-grid">
+        <div class="card" style="height:fit-content">
+          <div class="card-title">Batch Configuration</div>
+          <div class="field">
+            <label class="lbl">Target Guild</label>
+            <select id="sel-profile">
+              <option value="">Select a Page Guild...</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="upload-zone" onclick="document.getElementById('csv-input').click()">
+              <div class="upload-zone-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700">Import Manifest</div>
+                <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">CSV or XLSX</div>
+              </div>
+              <div id="csv-badge" style="display:none" class="upload-badge">0 Subjects</div>
+            </div>
+            <input id="csv-input" type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSV(this)"/>
+          </div>
+          <div class="field">
+            <div class="toggle-row">
+              <button class="toggle" id="random-toggle" onclick="toggleRandom()"></button>
+              <div class="toggle-info">
+                <div class="toggle-title">Random Subject</div>
+                <div class="toggle-sub">Pick one random topic</div>
+              </div>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="process-btn" onclick="processBatch()" style="flex:1" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Process Batch
+            </button>
+            <button class="btn btn-danger btn-sm" id="stop-btn" style="display:none" onclick="stopProcessing()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            </button>
+            <button class="btn btn-success btn-sm" id="resume-btn" style="display:none" onclick="resumePending()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="btn btn-outline btn-sm" id="clear-btn" style="display:none" onclick="clearResults()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </div>
+          <div id="no-key-warn" style="display:none;margin-top:10px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">
+            ⚠ Add a Gemini API key in the Vault tab
+          </div>
+          <div id="no-worker-warn" style="display:none;margin-top:6px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">
+            ⚠ No active Cloudflare Worker — check Workers tab
+          </div>
+        </div>
+        <div>
+          <div class="feed" id="feed">
+            <div class="empty-feed" id="empty-feed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+              Waiting for history to be written…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ GUILDS TAB ════ -->
+    <div class="tab-panel" id="tab-profiles">
+      <div class="profiles-grid">
+        <div class="card">
+          <div class="card-title">Forge Guild</div>
+          <div class="field">
+            <label class="lbl">Guild Alias</label>
+            <input type="text" id="new-profile-name" placeholder="e.g. Ancient Architect"/>
+          </div>
+          <div class="field">
+            <label class="lbl">Identity Sigil (Logo)</label>
+            <div class="logo-picker" onclick="document.getElementById('logo-input').click()">
+              <img id="logo-preview" style="display:none"/>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="logo-placeholder"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <input id="logo-input" type="file" accept="image/*" style="display:none" onchange="handleLogo(this)"/>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="addProfile()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Register Guild
+          </button>
+        </div>
+        <div>
+          <div class="section-title">Active Guilds</div>
+          <div class="gap-list" id="guilds-list">
+            <div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">
+              Empty Archive. Connect a page to begin.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ WORKERS TAB ════ -->
+    <div class="tab-panel" id="tab-workers">
+      <div class="wm-wrap">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Cloudflare FLUX Worker Manager</div>
+          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">
+            Each Cloudflare free account gets <strong style="color:var(--text)">100,000 neurons/day</strong>. Add multiple Worker URLs from different accounts — when one is exhausted, the engine auto-switches. All changes sync to your cloud profile instantly.
+          </p>
+
+          <div class="wm-active-bar">
+            <div class="wm-active-lbl">Currently Active Worker</div>
+            <div class="wm-active-url" id="wm-active-url">—</div>
+            <div class="wm-active-meta" id="wm-active-meta"></div>
+          </div>
+
+          <div class="section-title" style="margin-bottom:10px">Image Generation Settings</div>
+          <div class="flux-model-row">
+            <div>
+              <label class="lbl">FLUX Model</label>
+              <select id="flux-model" onchange="scheduleSync()">
+                <option value="@cf/black-forest-labs/flux-1-schnell">FLUX.1 Schnell — fastest</option>
+                <option value="@cf/black-forest-labs/flux-2-klein-4b">FLUX.2 Klein 4B</option>
+                <option value="@cf/black-forest-labs/flux-2-klein-9b">FLUX.2 Klein 9B</option>
+                <option value="@cf/black-forest-labs/flux-2-dev">FLUX.2 Dev — quality</option>
+                <option value="@cf/bytedance/stable-diffusion-xl-lightning">SDXL Lightning</option>
+                <option value="@cf/stabilityai/stable-diffusion-xl-base-1.0">SDXL Base 1.0</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Steps — <span id="flux-steps-val">4</span></label>
+              <input type="range" min="1" max="8" value="4" step="1" id="flux-steps"
+                oninput="document.getElementById('flux-steps-val').textContent=this.value;scheduleSync()"
+                style="width:100%;margin-top:10px;accent-color:var(--accent)"/>
+            </div>
+          </div>
+
+          <hr class="divider" style="margin:14px 0"/>
+
+          <div class="section-title">FLUX Worker URLs</div>
+          <div id="wm-list" class="gap-list" style="margin-bottom:14px"></div>
+
+          <label class="lbl">Add New Worker URL</label>
+          <div class="add-row">
+            <input type="url" id="wm-inp" placeholder="https://flux.yourname.workers.dev/"/>
+            <button class="btn btn-primary" onclick="wmAdd()" style="white-space:nowrap">+ Add</button>
+          </div>
+
+          <div class="wm-boxes-wrap" style="margin-top:22px">
+            <div class="section-title">Status Overview</div>
+            <div class="wm-boxes" id="wm-boxes"></div>
+            <div class="wm-legend">
+              <div class="wm-leg"><div class="wm-leg-dot amber"></div>In Use</div>
+              <div class="wm-leg"><div class="wm-leg-dot green"></div>Available</div>
+              <div class="wm-leg"><div class="wm-leg-dot red"></div>Exhausted</div>
+              <div class="wm-leg"><div class="wm-leg-dot grey"></div>Idle</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ VAULT TAB ════ -->
+    <div class="tab-panel" id="tab-vault">
+      <div class="settings-wrap">
+        <div class="card">
+          <div class="card-title">Gemini API Vault</div>
+          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">
+            Your Gemini API keys are stored in your personal cloud profile — encrypted per-user in GitHub Releases. They never leave your device except to call the Gemini API directly.
+          </p>
+          <div class="add-row" style="margin-bottom:16px">
+            <input type="password" id="new-key-input" placeholder="AIza..."/>
+            <button class="btn btn-primary" onclick="addKey()" style="white-space:nowrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div class="gap-list" id="keys-list">
+            <div class="key-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              Vault is empty
+            </div>
+          </div>
+
+          <hr class="divider"/>
+          <div class="section-title">Security Notes</div>
+          <div class="gap-list">
+            <div class="hint-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              Keys rotate automatically across generation cycles to balance quotas.
+            </div>
+            <div class="hint-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              Everything syncs to your GitHub Releases profile — no data stored on this server.
+            </div>
+            <div class="hint-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              Login from any browser with your username + PIN to restore your full setup.
+            </div>
+          </div>
+
+          <hr class="divider"/>
+          <div class="section-title">Proxy Configuration</div>
+          <div class="field">
+            <label class="lbl">Cloudflare Proxy Worker URL</label>
+            <div class="add-row">
+              <input type="url" id="proxy-url-setting" placeholder="https://historian-proxy.yourname.workers.dev/"/>
+              <button class="btn btn-primary" onclick="updateProxy()" style="white-space:nowrap">Save</button>
+            </div>
+          </div>
+          <div class="hint-box" style="margin-top:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            The proxy worker hides your GitHub token and routes all user data to GitHub Releases. Deploy the worker code from the companion file.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="notif" id="notif"></div>
+
 <script>
-  const WORKER = "https://flux.vmajibail.workers.dev/";
+// ═══════════════════════════════════════════
+//  PROXY URL (global, not per-user)
+// ═══════════════════════════════════════════
+let PROXY_URL = localStorage.getItem('historian_proxy_url') || '';
 
-  // ── Daily counter — resets at local midnight, only counts confirmed successes ──
-  function dayKey() {
-    const d = new Date();
-    return `flux_day_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-  }
-  function getCount() { return parseInt(localStorage.getItem(dayKey()) || "0"); }
-  function bumpCount() {
-    localStorage.setItem(dayKey(), getCount() + 1);
-    renderCounter(true);
-  }
-  function renderCounter(animate) {
-    const n = getCount();
-    const el = document.getElementById('count-num');
-    el.textContent = n;
-    if (animate) {
-      el.classList.add('bump');
-      setTimeout(() => el.classList.remove('bump'), 200);
-    }
-    const now = new Date();
-    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
-    const ms = midnight - now;
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    document.getElementById('count-meta').textContent = `resets in ${h}h ${m}m`;
-  }
+function getProxyUrl() { return PROXY_URL; }
 
-  // ── Show daily limit banner ──
-  // ONLY called when the server explicitly returns { error: "DAILY_LIMIT" } with status 429.
-  // Never triggered by network errors, timeouts, or other failures.
-  function showLimitBanner(resetsIn) {
-    const banner = document.getElementById('limit-banner');
-    const strip  = document.getElementById('counter-strip');
-    const num    = document.getElementById('count-num');
-    banner.style.display = 'block';
-    strip.classList.add('limit');
-    num.classList.add('limit');
-    document.getElementById('banner-reset').textContent =
-      `⏱ Resets in ${resetsIn} at UTC midnight`;
-    document.getElementById('btn').disabled = true;
-    document.getElementById('btn-label').textContent = 'Limit reached — come back later';
-    setStatus('');
-  }
+function saveProxyUrl(url) {
+  PROXY_URL = url;
+  localStorage.setItem('historian_proxy_url', url);
+}
 
-  // ── Model config ──
-  const MODELS = {
-    "@cf/black-forest-labs/flux-1-schnell":          { maxSteps:8,  def:4,  guidance:false },
-    "@cf/black-forest-labs/flux-2-klein-4b":         { maxSteps:8,  def:4,  guidance:false },
-    "@cf/black-forest-labs/flux-2-klein-9b":         { maxSteps:8,  def:4,  guidance:false },
-    "@cf/black-forest-labs/flux-2-dev":              { maxSteps:28, def:20, guidance:true  },
-    "@cf/bytedance/stable-diffusion-xl-lightning":   { maxSteps:8,  def:4,  guidance:true  },
-    "@cf/stabilityai/stable-diffusion-xl-base-1.0":  { maxSteps:20, def:20, guidance:true  },
-    "@cf/runwayml/stable-diffusion-v1-5-inpainting": { maxSteps:20, def:20, guidance:true  },
-    "@cf/leonardo/phoenix-1.0":                      { maxSteps:30, def:25, guidance:true  },
-    "@cf/leonardo/lucid-origin":                     { maxSteps:30, def:25, guidance:true  },
-    "@cf/lykon/dreamshaper-8-lcm":                   { maxSteps:8,  def:4,  guidance:true  },
-  };
+// ═══════════════════════════════════════════
+//  AUTH STATE
+// ═══════════════════════════════════════════
+let currentUser = null; // { username, pin }
 
-  function modelId()   { return document.getElementById('model').value; }
-  function sizeWH()    { return document.getElementById('size').value.split('x').map(Number); }
-  function stepCount() { return parseInt(document.getElementById('steps').value); }
+// Check session saved in localStorage
+function loadSession() {
+  const s = localStorage.getItem('historian_session');
+  if (s) { try { return JSON.parse(s); } catch {} }
+  return null;
+}
+function saveSession(u) {
+  localStorage.setItem('historian_session', JSON.stringify(u));
+}
+function clearSession() {
+  localStorage.removeItem('historian_session');
+}
 
-  function onModel() {
-    const m = MODELS[modelId()]; if (!m) return;
-    const el = document.getElementById('steps');
-    el.max = m.maxSteps; el.value = m.def;
-    document.getElementById('steps-val').textContent = m.def;
-    const gc = document.getElementById('ctrl-guidance');
-    gc.style.opacity      = m.guidance ? '1'    : '0.35';
-    gc.style.pointerEvents = m.guidance ? 'auto' : 'none';
-  }
+// ═══════════════════════════════════════════
+//  PROXY API CALLS
+// ═══════════════════════════════════════════
+async function proxyCall(action, body = {}) {
+  const url = getProxyUrl();
+  if (!url) throw new Error('No proxy URL configured. Set it in the Vault tab.');
 
-  function chip(t) {
-    const el = document.getElementById('prompt');
-    el.value = (el.value.trim() ? el.value.trim() + ', ' : '') + t;
-    el.focus();
-  }
-
-  // ── Generate ──
-  const sessionHistory = [];
-
-  async function generate() {
-    const p = document.getElementById('prompt').value.trim();
-    if (!p) { setStatus('Enter a prompt first.', true); return; }
-
-    const mid = modelId(), m = MODELS[mid];
-    const [w, h] = sizeWH(), s = stepCount();
-    const guidance = m.guidance
-      ? parseFloat(document.getElementById('guidance').value)
-      : undefined;
-
-    setLoading(true);
-    setStatus('Sending to Workers AI…');
-    document.getElementById('result').style.display = 'none';
-
-    const body = { prompt: p, model: mid, width: w, height: h, steps: s };
-    if (guidance !== undefined) body.guidance = guidance;
-
-    try {
-      const res = await fetch(WORKER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      // ── Only treat as daily limit if server explicitly says so ──
-      if (res.status === 429) {
-        let data = {};
-        try { data = await res.json(); } catch {}
-
-        // Guard: only show limit banner if server confirms it's a DAILY_LIMIT
-        if (data.error === "DAILY_LIMIT") {
-          showLimitBanner(data.resetsIn || 'soon');
-        } else {
-          // Some other rate limit (e.g. per-minute throttle) — show as regular error
-          setStatus('Rate limited — please wait a moment and try again.', true);
-        }
-        setLoading(false);
-        return;
-      }
-
-      if (!res.ok) {
-        const t = await res.text();
-        let e; try { e = JSON.parse(t); } catch {}
-        throw new Error(e?.error || `Server error ${res.status}`);
-      }
-
-      // Confirm we got an image (not an accidental JSON error body)
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('image')) {
-        const t = await res.text();
-        let e; try { e = JSON.parse(t); } catch {}
-        throw new Error(e?.error || 'Unexpected response — expected an image');
-      }
-
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-
-      document.getElementById('out-img').src = url;
-      const dl = document.getElementById('dl-btn');
-      dl.href     = url;
-      dl.download = `flux-${Date.now()}.jpg`;
-      document.getElementById('result-meta').textContent =
-        `"${p.slice(0, 90)}${p.length > 90 ? '…' : ''}"`;
-      document.getElementById('result').style.display = 'block';
-
-      // Only bump count on a confirmed successful image
-      bumpCount();
-      setStatus(`Done · ${w}×${h} · ${s} step${s !== 1 ? 's' : ''}`);
-
-      sessionHistory.unshift({ url, p });
-      if (sessionHistory.length > 12) sessionHistory.pop();
-      renderHistory();
-
-    } catch (err) {
-      setStatus(err.message, true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function setLoading(on) {
-    document.getElementById('btn').disabled = on;
-    document.getElementById('spinner').style.display = on ? 'block' : 'none';
-    document.getElementById('btn-label').textContent = on ? 'Generating…' : 'Generate image';
-  }
-  function setStatus(msg, err) {
-    const el = document.getElementById('status');
-    el.textContent = msg;
-    el.className = err ? 'err' : '';
-  }
-
-  function renderHistory() {
-    if (sessionHistory.length < 2) return;
-    document.getElementById('history').style.display = 'block';
-    document.getElementById('history-grid').innerHTML = sessionHistory.map((h, i) =>
-      `<div class="h-thumb" onclick="loadH(${i})"><img src="${h.url}" loading="lazy"/></div>`
-    ).join('');
-  }
-  function loadH(i) {
-    const h = sessionHistory[i];
-    document.getElementById('out-img').src = h.url;
-    document.getElementById('dl-btn').href = h.url;
-    document.getElementById('result-meta').textContent = `"${h.p.slice(0, 90)}"`;
-    document.getElementById('result').style.display = 'block';
-  }
-
-  document.getElementById('prompt').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...body })
   });
 
-  // ── Auto Stress Test ──────────────────────────────────────────────────────
-  // Fires one request at a time (sequential, not parallel) so we can
-  // accurately count how many images Cloudflare allows before hitting 4006.
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Proxy error ${res.status}`);
+  return data;
+}
 
-  const RANDOM_SUBJECTS  = ['astronaut','samurai','dragon','cyberpunk city','ancient temple','neon forest','robot geisha','deep ocean creature','desert wanderer','aurora landscape','crystal cave','futuristic Tokyo','haunted lighthouse','alien marketplace','mountain monastery'];
-  const RANDOM_STYLES    = ['cinematic lighting','oil painting','hyperrealistic 8k','anime style','watercolor','neon noir','golden hour','macro photography','impressionist','dark fantasy','soft pastel','low poly art','cel shading','studio ghibli'];
-  const RANDOM_MOODS     = ['mysterious','epic','serene','chaotic','melancholic','vibrant','eerie','majestic','dreamy','intense'];
+// ── AUTH CALLS ──
+async function apiRegister(username, pin) {
+  return proxyCall('register', { username, pin });
+}
+async function apiLogin(username, pin) {
+  return proxyCall('login', { username, pin });
+}
 
-  function randomPrompt() {
-    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    return `${pick(RANDOM_SUBJECTS)}, ${pick(RANDOM_STYLES)}, ${pick(RANDOM_MOODS)}`;
+// ── DATA CALLS (all require username + pin for auth) ──
+async function apiLoadData() {
+  return proxyCall('load', { username: currentUser.username, pin: currentUser.pin });
+}
+async function apiSaveData(data) {
+  return proxyCall('save', { username: currentUser.username, pin: currentUser.pin, data });
+}
+
+// ═══════════════════════════════════════════
+//  USER DATA (loaded from cloud)
+// ═══════════════════════════════════════════
+let userData = {
+  apiKeys: [],
+  profiles: [],
+  results: [],
+  workers: [],
+  fluxModel: '@cf/black-forest-labs/flux-1-schnell',
+  fluxSteps: 4
+};
+
+let syncTimer = null;
+let isSyncing = false;
+
+function scheduleSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncToCloud, 1500);
+  setSyncState('dirty');
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot) return;
+  dot.className = 'sync-dot';
+  if (state === 'dirty')   { dot.classList.add('syncing'); lbl.textContent = 'Unsaved…'; }
+  if (state === 'syncing') { dot.classList.add('syncing'); lbl.textContent = 'Syncing…'; }
+  if (state === 'synced')  { dot.classList.add('synced');  lbl.textContent = 'Cloud Synced'; }
+  if (state === 'error')   { lbl.textContent = 'Sync Error'; }
+}
+
+async function syncToCloud() {
+  if (isSyncing || !currentUser) return;
+  isSyncing = true;
+  setSyncState('syncing');
+  try {
+    // Don't store full image data in cloud (too large) — store everything except compositedImageUrl
+    const safeResults = userData.results.map(r => ({
+      ...r,
+      compositedImageUrl: r.compositedImageUrl ? '[stored-locally]' : '',
+      imageUrl: r.imageUrl ? '[stored-locally]' : ''
+    }));
+    await apiSaveData({ ...userData, results: safeResults });
+    setSyncState('synced');
+  } catch(e) {
+    setSyncState('error');
+    console.error('Sync failed:', e);
   }
+  isSyncing = false;
+}
 
-  let autoRunning   = false;
-  let autoAbort     = false;
-  let autoSent      = 0;
-  let autoOk        = 0;
-  let autoFail      = 0;
-  let autoStartTime = 0;
+// ═══════════════════════════════════════════
+//  AUTH UI
+// ═══════════════════════════════════════════
+function showAuthMode(mode) {
+  document.getElementById('auth-login').style.display    = mode === 'login'    ? 'block' : 'none';
+  document.getElementById('auth-register').style.display = mode === 'register' ? 'block' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i === 0 && mode === 'login') || (i === 1 && mode === 'register'));
+  });
+}
 
-  function stressLog(msg, type = 'info') {
-    const log = document.getElementById('stress-log');
-    const line = document.createElement('div');
-    line.className = `log-${type}`;
-    const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    line.textContent = `[${ts}] ${msg}`;
-    log.prepend(line);
-    // Keep log tidy
-    while (log.children.length > 40) log.removeChild(log.lastChild);
+function getPinValue(prefix) {
+  return [0,1,2,3].map(i => document.getElementById(prefix+i).value).join('');
+}
+
+function setupPinInputs(prefix) {
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById(prefix+i);
+    el.addEventListener('input', () => {
+      el.classList.toggle('filled', !!el.value);
+      if (el.value && i < 3) document.getElementById(prefix+(i+1)).focus();
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !el.value && i > 0) document.getElementById(prefix+(i-1)).focus();
+    });
+  });
+}
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const pin      = getPinValue('lp');
+
+  if (!username) { showErr(err, 'Enter your username.'); return; }
+  if (pin.length !== 4) { showErr(err, 'Enter your 4-digit PIN.'); return; }
+  if (!PROXY_URL) { showErr(err, 'No proxy URL set. Configure it below the login form.'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner sm"></span> Entering Archive…';
+  err.style.display = 'none';
+
+  try {
+    await apiLogin(username, pin);
+    currentUser = { username, pin };
+    saveSession(currentUser);
+    await loadUserData();
+    enterApp();
+  } catch(e) {
+    showErr(err, e.message || 'Login failed.');
   }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Enter the Archive';
+}
 
-  function bumpStat(id) {
-    const el = document.getElementById(id);
-    el.classList.add('bump');
-    setTimeout(() => el.classList.remove('bump'), 150);
+async function doRegister() {
+  const btn = document.getElementById('register-btn');
+  const err = document.getElementById('reg-err');
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const pin      = getPinValue('rp');
+
+  if (!username || username.length < 3) { showErr(err, 'Username must be at least 3 characters.'); return; }
+  if (!/^[a-z0-9_]+$/.test(username))  { showErr(err, 'Letters, numbers, underscores only.'); return; }
+  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { showErr(err, 'Enter a valid 4-digit PIN.'); return; }
+  if (!PROXY_URL) { showErr(err, 'No proxy URL configured. Contact the admin.'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner sm"></span> Creating Account…';
+  err.style.display = 'none';
+
+  try {
+    await apiRegister(username, pin);
+    currentUser = { username, pin };
+    saveSession(currentUser);
+    userData = { apiKeys: [], profiles: [], results: [], workers: [{ url: 'https://flux.vmajibail.workers.dev/', status: 'active' }], fluxModel: '@cf/black-forest-labs/flux-1-schnell', fluxSteps: 4 };
+    await syncToCloud();
+    enterApp();
+    notify(`✓ Welcome, ${username}! Your archive is ready.`, 'success');
+  } catch(e) {
+    showErr(err, e.message || 'Registration failed.');
   }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Account';
+}
 
-  function updateStressStats() {
-    document.getElementById('st-sent').textContent = autoSent;
-    document.getElementById('st-ok').textContent   = autoOk;
-    document.getElementById('st-fail').textContent = autoFail;
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
 
-    if (autoOk > 0 && autoStartTime) {
-      const mins = (Date.now() - autoStartTime) / 60000;
-      const rate = mins > 0.05 ? (autoOk / mins).toFixed(1) : '…';
-      document.getElementById('st-rate').textContent = rate;
+async function loadUserData() {
+  try {
+    const res = await apiLoadData();
+    if (res.data) {
+      userData = { ...userData, ...res.data };
+      // Results with [stored-locally] images just lose images — that's fine
+      userData.results = (userData.results || []).map(r => ({
+        ...r,
+        compositedImageUrl: r.compositedImageUrl === '[stored-locally]' ? '' : r.compositedImageUrl,
+        imageUrl: r.imageUrl === '[stored-locally]' ? '' : r.imageUrl
+      }));
     }
+  } catch(e) {
+    console.warn('Could not load user data:', e);
   }
+}
 
-  async function runOnceAuto() {
-    const p   = randomPrompt();
-    const mid = modelId();
-    const m   = MODELS[mid];
-    const [w, h] = sizeWH();
-    const s   = parseInt(document.getElementById('steps').value);
-    const guidance = m.guidance
-      ? parseFloat(document.getElementById('guidance').value)
-      : undefined;
+function enterApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
 
-    document.getElementById('auto-prompt-preview').textContent = `→ "${p}"`;
+  const initial = (currentUser.username[0] || '?').toUpperCase();
+  document.getElementById('nav-user-initial').textContent = initial;
+  document.getElementById('nav-user-tip').textContent = `${currentUser.username} · click to logout`;
 
-    const body = { prompt: p, model: mid, width: w, height: h, steps: s };
-    if (guidance !== undefined) body.guidance = guidance;
+  // Apply loaded settings
+  if (userData.fluxModel) document.getElementById('flux-model').value = userData.fluxModel;
+  if (userData.fluxSteps) {
+    document.getElementById('flux-steps').value = userData.fluxSteps;
+    document.getElementById('flux-steps-val').textContent = userData.fluxSteps;
+  }
+  if (PROXY_URL) document.getElementById('proxy-url-setting').value = PROXY_URL;
 
-    autoSent++;
-    bumpStat('st-sent');
-    updateStressStats();
+  renderAll();
+  setSyncState('synced');
+}
 
-    try {
-      const res = await fetch(WORKER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+function logout() {
+  if (!confirm('Logout? Your data is saved to the cloud.')) return;
+  clearSession();
+  currentUser = null;
+  userData = { apiKeys: [], profiles: [], results: [], workers: [], fluxModel: '@cf/black-forest-labs/flux-1-schnell', fluxSteps: 4 };
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  // Clear pin inputs
+  [0,1,2,3].forEach(i => {
+    const lp = document.getElementById('lp'+i);
+    const rp = document.getElementById('rp'+i);
+    if (lp) { lp.value = ''; lp.classList.remove('filled'); }
+    if (rp) { rp.value = ''; rp.classList.remove('filled'); }
+  });
+}
 
-      if (res.status === 429) {
-        let data = {};
-        try { data = await res.json(); } catch {}
-        if (data.error === 'DAILY_LIMIT') {
-          autoFail++;
-          bumpStat('st-fail');
-          updateStressStats();
-          stressLog(`🛑 DAILY LIMIT HIT after ${autoOk} successful images! Resets in ${data.resetsIn || 'soon'}`, 'warn');
-          showLimitBanner(data.resetsIn || 'soon');
-          stopAuto(true);
-          return 'limit';
-        }
-        autoFail++;
-        bumpStat('st-fail');
-        stressLog(`⚠ Rate limited (non-daily) — pausing 5s`, 'warn');
-        updateStressStats();
-        await new Promise(r => setTimeout(r, 5000));
-        return 'retry';
+function updateProxy() {
+  const url = document.getElementById('proxy-url-setting').value.trim();
+  if (!url) return;
+  saveProxyUrl(url);
+  notify('✓ Proxy URL saved!', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'workers')  renderWorkers();
+  if (name === 'generate') renderProfileSelect();
+}
+
+// ═══════════════════════════════════════════
+//  NOTIFICATION
+// ═══════════════════════════════════════════
+let notifTimer;
+function notify(msg, type = 'info') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = `notif show ${type}`;
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════
+//  API KEYS
+// ═══════════════════════════════════════════
+function addKey() {
+  const inp = document.getElementById('new-key-input');
+  const val = inp.value.trim();
+  if (!val || userData.apiKeys.includes(val)) return;
+  userData.apiKeys.push(val); inp.value = '';
+  renderKeys(); updateWarnings(); scheduleSync();
+}
+document.getElementById('new-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') addKey(); });
+
+function removeKey(i) { userData.apiKeys.splice(i, 1); renderKeys(); updateWarnings(); scheduleSync(); }
+
+function renderKeys() {
+  const el = document.getElementById('keys-list');
+  if (!userData.apiKeys.length) {
+    el.innerHTML = `<div class="key-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Vault is empty</div>`;
+    return;
+  }
+  el.innerHTML = userData.apiKeys.map((k, i) => `
+    <div class="key-row">
+      <div class="key-indicator">
+        <div class="key-dot"></div>
+        <span class="key-text">AIza...${k.slice(-8)}</span>
+      </div>
+      <button class="key-del" onclick="removeKey(${i})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+//  WORKERS
+// ═══════════════════════════════════════════
+function getWorkers()      { return userData.workers || []; }
+function getActiveWorker() { return getWorkers().find(w => w.status === 'active') || null; }
+
+function exhaustActive() {
+  const i = getWorkers().findIndex(w => w.status === 'active');
+  if (i >= 0) userData.workers[i].status = 'exhausted';
+  const ni = getWorkers().findIndex(w => w.status === 'idle');
+  if (ni >= 0) { userData.workers[ni].status = 'active'; scheduleSync(); renderWorkers(); return true; }
+  scheduleSync(); renderWorkers(); return false;
+}
+
+async function fetchFluxImage(prompt) {
+  const model = document.getElementById('flux-model').value;
+  const steps = parseInt(document.getElementById('flux-steps').value);
+  userData.fluxModel = model; userData.fluxSteps = steps;
+
+  for (let attempt = 0; attempt <= getWorkers().length; attempt++) {
+    const aw = getActiveWorker();
+    if (!aw) throw new Error('All FLUX Workers exhausted. Add more in the Workers tab.');
+
+    const res = await fetch(aw.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, model, width: 1080, height: 1080, steps })
+    });
+
+    if (res.status === 429) {
+      let data = {}; try { data = await res.json(); } catch {}
+      if (data.error === 'DAILY_LIMIT') {
+        const switched = exhaustActive();
+        if (!switched) throw new Error('All Workers exhausted for today. Add more in Workers tab.');
+        notify('⚡ Worker exhausted — switched to next URL…', 'info');
+        continue;
       }
-
-      if (!res.ok) {
-        autoFail++;
-        bumpStat('st-fail');
-        stressLog(`✗ HTTP ${res.status}`, 'err');
-        updateStressStats();
-        return 'error';
-      }
-
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('image')) {
-        const t = await res.text();
-        let e; try { e = JSON.parse(t); } catch {}
-        autoFail++;
-        bumpStat('st-fail');
-        stressLog(`✗ Bad response: ${e?.error || 'not an image'}`, 'err');
-        updateStressStats();
-        return 'error';
-      }
-
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-
-      // Show latest image in result panel
-      document.getElementById('out-img').src = url;
-      document.getElementById('dl-btn').href = url;
-      document.getElementById('dl-btn').download = `flux-auto-${Date.now()}.jpg`;
-      document.getElementById('result-meta').textContent = `[auto] "${p.slice(0, 80)}"`;
-      document.getElementById('result').style.display = 'block';
-
-      autoOk++;
-      bumpStat('st-ok');
-      bumpCount();
-      stressLog(`✓ #${autoOk} — "${p.slice(0, 55)}…"`, 'ok');
-      updateStressStats();
-
-      sessionHistory.unshift({ url, p });
-      if (sessionHistory.length > 12) sessionHistory.pop();
-      renderHistory();
-
-      return 'ok';
-
-    } catch (err) {
-      autoFail++;
-      bumpStat('st-fail');
-      stressLog(`✗ Network error: ${err.message}`, 'err');
-      updateStressStats();
-      return 'error';
+      throw new Error('Worker rate limited. Try again shortly.');
     }
-  }
-
-  async function autoLoop() {
-    stressLog('🚀 Stress test started — firing sequential requests…', 'info');
-    autoStartTime = Date.now();
-
-    while (!autoAbort) {
-      const result = await runOnceAuto();
-      if (autoAbort) break;
-      if (result === 'limit') break;
-      // Small gap between requests to be a good citizen
-      await new Promise(r => setTimeout(r, 300));
-    }
-
-    if (!autoAbort) {
-      stressLog(`✅ Test complete — ${autoOk} images succeeded, ${autoFail} failed`, 'info');
-    } else {
-      stressLog(`⏹ Test stopped manually — ${autoOk} images succeeded`, 'info');
-    }
-
-    document.getElementById('stress-panel-title').textContent =
-      `Stress Test — ${autoOk} images before limit`;
-    document.getElementById('auto-prompt-preview').textContent = '';
-  }
-
-  function toggleAuto() {
-    if (autoRunning) {
-      stopAuto(false);
-    } else {
-      startAuto();
-    }
-  }
-
-  function startAuto() {
-    autoRunning   = true;
-    autoAbort     = false;
-    autoSent      = 0;
-    autoOk        = 0;
-    autoFail      = 0;
-    autoStartTime = 0;
-
-    // Reset stats display
-    ['st-sent','st-ok','st-fail'].forEach(id => document.getElementById(id).textContent = '0');
-    document.getElementById('st-rate').textContent = '—';
-    document.getElementById('stress-log').innerHTML = '';
-    document.getElementById('auto-prompt-preview').textContent = '';
-    document.getElementById('stress-panel-title').textContent = 'Live Stress Test';
-
-    // UI state
-    const ab = document.getElementById('auto-btn');
-    ab.classList.add('running');
-    document.getElementById('auto-icon').textContent = '■';
-    document.getElementById('auto-label').textContent = 'Stop Stress Test';
-    document.getElementById('btn').disabled = true;
-
-    document.getElementById('stress-panel').style.display = 'block';
-    document.getElementById('stress-panel').classList.add('running');
-    document.getElementById('stress-blink').style.display = 'block';
-
-    autoLoop().finally(() => {
-      autoRunning = false;
-      document.getElementById('stress-panel').classList.remove('running');
-      document.getElementById('stress-blink').style.display = 'none';
+    if (!res.ok) { const t = await res.text(); let e; try{e=JSON.parse(t);}catch{} throw new Error(e?.error||`Worker error ${res.status}`); }
+    const ct = res.headers.get('content-type')||'';
+    if (!ct.includes('image')) { const t=await res.text(); let e; try{e=JSON.parse(t);}catch{} throw new Error(e?.error||'Worker returned non-image'); }
+    const blob = await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onloadend=()=>resolve(reader.result.split(',')[1]);
+      reader.onerror=reject;
+      reader.readAsDataURL(blob);
     });
   }
+  throw new Error('Failed after all retries.');
+}
 
-  function stopAuto(limitHit) {
-    autoAbort = true;
-    autoRunning = false;
+function wmAdd() {
+  let url = document.getElementById('wm-inp').value.trim();
+  if (!url) return;
+  if (!url.startsWith('http')) url = 'https://' + url;
+  if (!url.endsWith('/')) url += '/';
+  if (getWorkers().some(w => w.url === url)) { notify('⚠ Already added', 'info'); return; }
+  const hasActive = getWorkers().some(w => w.status === 'active');
+  userData.workers.push({ url, status: hasActive ? 'idle' : 'active' });
+  scheduleSync(); renderWorkers(); document.getElementById('wm-inp').value = '';
+  notify('✓ Worker URL added', 'success'); updateWarnings();
+}
+document.getElementById('wm-inp').addEventListener('keydown', e => { if (e.key === 'Enter') wmAdd(); });
 
-    const ab = document.getElementById('auto-btn');
-    ab.classList.remove('running');
-    document.getElementById('auto-icon').textContent = '⚡';
-    document.getElementById('auto-label').textContent = limitHit
-      ? 'Limit reached — restart tomorrow'
-      : 'Auto Stress Test — find the free limit';
-    ab.disabled = limitHit;
-    document.getElementById('btn').disabled = false;
+function wmDelete(i) {
+  const wasActive = getWorkers()[i].status === 'active';
+  userData.workers.splice(i, 1);
+  if (wasActive) { const next = getWorkers().find(w => w.status !== 'exhausted'); if (next) next.status = 'active'; }
+  scheduleSync(); renderWorkers(); updateWarnings();
+}
+
+function wmActivate(i) {
+  userData.workers.forEach(w => { if (w.status === 'active') w.status = 'idle'; });
+  userData.workers[i].status = 'active';
+  scheduleSync(); renderWorkers();
+  notify(`✓ Switched to worker ${i+1}`, 'success');
+}
+
+function renderWorkers() {
+  const ws   = getWorkers();
+  const aw   = getActiveWorker();
+  const avail = ws.filter(w => w.status !== 'exhausted').length;
+
+  const urlEl = document.getElementById('wm-active-url');
+  const metaEl = document.getElementById('wm-active-meta');
+  if (urlEl) urlEl.textContent = aw ? aw.url : 'None — add a URL below';
+  if (metaEl) metaEl.textContent = aw ? `Worker ${ws.indexOf(aw)+1} of ${ws.length} · ${avail} available` : '';
+
+  const list = document.getElementById('wm-list');
+  if (!list) return;
+  list.innerHTML = ws.map((w,i) => {
+    const cls   = w.status==='active'?'is-active':w.status==='exhausted'?'is-exhausted':'is-idle';
+    const bc    = w.status==='active'?'amber':w.status==='exhausted'?'red':'green';
+    const tag   = w.status==='active'?'In use now':w.status==='exhausted'?'Exhausted today':'Available — click to activate';
+    const click = w.status==='idle'?`onclick="wmActivate(${i})"`:'';
+    const del   = w.status!=='active'?`<button class="wm-del" onclick="event.stopPropagation();wmDelete(${i})">✕</button>`:'';
+    return `<div class="wm-url-row ${cls}" ${click}>
+      <div class="wm-badge ${bc}"></div>
+      <div class="wm-info"><div class="wm-url-text">${w.url}</div><div class="wm-url-tag ${bc}">${tag}</div></div>
+      ${del}
+    </div>`;
+  }).join('');
+
+  const boxes = document.getElementById('wm-boxes');
+  if (boxes) {
+    boxes.innerHTML = ws.map((w,i) => {
+      const bc = w.status==='active'?'amber':w.status==='exhausted'?'red':'green';
+      const tip = `#${i+1} · ${w.status} · ${w.url.replace('https://','').slice(0,28)}`;
+      const cc = w.status==='idle'?'idle-click':'';
+      const cl = w.status==='idle'?`onclick="wmActivate(${i})"`:'';
+      return `<div class="wm-box ${bc} ${cc}" ${cl}><span class="wm-box-tip">${tip}</span></div>`;
+    }).join('');
   }
-  // ── End Auto Stress Test ──────────────────────────────────────────────────
+}
 
-  onModel();
-  renderCounter(false);
-  setInterval(() => renderCounter(false), 60000);
+// ═══════════════════════════════════════════
+//  PROFILES / GUILDS
+// ═══════════════════════════════════════════
+let pendingLogoUrl = null;
+
+function handleLogo(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const optimized = await resizeImage(reader.result, 100, 100);
+    pendingLogoUrl = optimized;
+    document.getElementById('logo-preview').src = optimized;
+    document.getElementById('logo-preview').style.display = 'block';
+    document.getElementById('logo-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resizeImage(dataUrl, w, h) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
+function addProfile() {
+  const name = document.getElementById('new-profile-name').value.trim();
+  if (!name) { notify('Enter a guild name.', 'error'); return; }
+  userData.profiles.push({ id: Math.random().toString(36).substr(2,9), name, logoUrl: pendingLogoUrl });
+  document.getElementById('new-profile-name').value = '';
+  document.getElementById('logo-preview').style.display = 'none';
+  document.getElementById('logo-placeholder').style.display = 'block';
+  pendingLogoUrl = null;
+  renderGuilds(); renderProfileSelect(); scheduleSync();
+  notify('✓ Guild registered!', 'success');
+}
+
+function removeProfile(id) {
+  userData.profiles = userData.profiles.filter(p => p.id !== id);
+  renderGuilds(); renderProfileSelect(); scheduleSync();
+}
+
+function renderGuilds() {
+  const el = document.getElementById('guilds-list');
+  if (!el) return;
+  if (!userData.profiles.length) {
+    el.innerHTML = `<div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive. Connect a page to begin.</div>`;
+    return;
+  }
+  el.innerHTML = userData.profiles.map(p => `
+    <div class="guild-card">
+      <div class="guild-logo">${p.logoUrl?`<img src="${p.logoUrl}" alt=""/>`:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>'}</div>
+      <div class="guild-info"><div class="guild-name">${p.name}</div><div class="guild-id">UID: ${p.id}</div></div>
+      <button class="guild-del" onclick="removeProfile('${p.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+    </div>
+  `).join('');
+}
+
+function renderProfileSelect() {
+  const sel = document.getElementById('sel-profile');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select a Page Guild...</option>';
+  if (userData.profiles.length) {
+    sel.innerHTML += '<option value="ALL">⚡ All active Guilds</option>';
+    userData.profiles.forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name}</option>`; });
+  }
+  sel.value = cur; updateProcessBtn();
+}
+
+// ═══════════════════════════════════════════
+//  CSV / XLSX
+// ═══════════════════════════════════════════
+let csvData = [];
+let pickRandom = false;
+
+function handleCSV(input) {
+  const file = input.files[0]; if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      csvData = XLSX.utils.sheet_to_json(ws).map(r => ({ topic: r.Topic||r.topic||r[Object.keys(r)[0]] })).filter(t=>t.topic);
+      updateCSVBadge(); notify(`Imported ${csvData.length} topics from Excel.`, 'success');
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    Papa.parse(file, {
+      header: true,
+      complete: r => {
+        csvData = r.data.map(row => ({ topic: row.Topic||row.topic||row[Object.keys(row)[0]] })).filter(t=>t.topic);
+        updateCSVBadge(); notify(`Imported ${csvData.length} topics from CSV.`, 'success');
+      }
+    });
+  }
+  updateProcessBtn();
+}
+
+function updateCSVBadge() {
+  const b = document.getElementById('csv-badge');
+  b.textContent = csvData.length + ' Subjects';
+  b.style.display = csvData.length > 0 ? 'inline-block' : 'none';
+  updateProcessBtn();
+}
+
+function toggleRandom() {
+  pickRandom = !pickRandom;
+  document.getElementById('random-toggle').classList.toggle('on', pickRandom);
+}
+
+// ═══════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════
+function updateProcessBtn() {
+  const hasKey    = userData.apiKeys.length > 0;
+  const hasCSV    = csvData.length > 0;
+  const hasWorker = !!getActiveWorker();
+  const btn = document.getElementById('process-btn');
+  if (btn) btn.disabled = !(hasKey && hasCSV && hasWorker);
+  const nkw = document.getElementById('no-key-warn');
+  const nww = document.getElementById('no-worker-warn');
+  if (nkw) nkw.style.display = !hasKey    ? 'block' : 'none';
+  if (nww) nww.style.display = !hasWorker ? 'block' : 'none';
+}
+function updateWarnings() { updateProcessBtn(); }
+
+let isProcessing = false;
+let stopRequested = false;
+
+function setProcessing(on) {
+  isProcessing = on;
+  const pb = document.getElementById('process-btn');
+  const sb = document.getElementById('stop-btn');
+  const rb = document.getElementById('resume-btn');
+  const cb = document.getElementById('clear-btn');
+  const sd = document.getElementById('sync-dot');
+  if (pb) pb.disabled = on;
+  if (sb) sb.style.display = on ? 'inline-flex' : 'none';
+  if (rb) rb.style.display = 'none';
+  if (cb) cb.style.display = userData.results.length > 0 && !on ? 'inline-flex' : 'none';
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) exportBtn.style.display = userData.results.some(r=>r.status==='done') ? 'inline-flex' : 'none';
+}
+
+// ═══════════════════════════════════════════
+//  GEMINI
+// ═══════════════════════════════════════════
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
+async function callGemini(apiKey, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey.trim()}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ role:'user', parts:[{ text:prompt }] }] })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(JSON.stringify(e)||`Gemini ${res.status}`); }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// ═══════════════════════════════════════════
+//  IMAGE COMPOSITE
+// ═══════════════════════════════════════════
+function compositeImage(base64Img, shortText, logoUrl) {
+  return new Promise(resolve => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080; canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,1080,1350);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img,0,0,1080,1080);
+      ctx.fillStyle='#000'; ctx.fillRect(0,1140,1080,210);
+      ctx.font='700 48px Syne, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      const cleanText=shortText.replace(/<yellow>|<\/yellow>/g,'');
+      const words=cleanText.split(' ');
+      const lines=[]; let cur='';
+      words.forEach(w=>{ const test=cur+w+' '; if(ctx.measureText(test).width>980){lines.push(cur.trim());cur=w+' ';}else cur=test; });
+      lines.push(cur.trim());
+      const ym=shortText.match(/<yellow>(.*?)<\/yellow>/);
+      const yw=ym?ym[1]:null;
+      let y=1140+105-((lines.length-1)*30);
+      lines.forEach(line=>{
+        if(yw&&line.includes(yw)){
+          const parts=line.split(yw);
+          let x=540-(ctx.measureText(line).width/2);
+          ctx.textAlign='left';
+          ctx.fillStyle='#fff'; ctx.fillText(parts[0],x,y); x+=ctx.measureText(parts[0]).width;
+          ctx.fillStyle='#FFD700'; ctx.fillText(yw,x,y); x+=ctx.measureText(yw).width;
+          ctx.fillStyle='#fff'; ctx.fillText(parts[1]||'',x,y);
+        } else { ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.fillText(line,540,y); }
+        y+=60;
+      });
+      if(logoUrl){ const logo=new Image(); logo.onload=()=>{ ctx.drawImage(logo,965,1025,100,100); resolve(canvas.toDataURL('image/jpeg',0.9)); }; logo.src=logoUrl; }
+      else resolve(canvas.toDataURL('image/jpeg',0.9));
+    };
+    img.src=`data:image/png;base64,${base64Img}`;
+  });
+}
+
+// ═══════════════════════════════════════════
+//  PROCESS ONE
+// ═══════════════════════════════════════════
+async function processOne(res) {
+  const profile = userData.profiles.find(p => p.id === res.pageProfileId);
+  if (!profile) return;
+
+  updateResultStatus(res.id, 'processing');
+  await sleep(600);
+
+  // Gemini text
+  const prompt = `You are a history content author for high-engagement Facebook posts for the page "${profile.name}".
+Topic: ${res.topic}
+
+Requirement 1: Short Text (Overlay) — Max 8 words. Punchy. Wrap exactly ONE key term in <yellow>...</yellow>
+
+Requirement 2: Long Description — ~280 words, 6 paragraphs. Hook in first sentence. Natural storytelling tone.
+
+Return ONLY valid raw JSON (no markdown, no backticks):
+{ "short": "text with <yellow>keyword</yellow>", "long": "text content" }`;
+
+  let textData;
+  try {
+    const raw = await callGemini(userData.apiKeys[0], prompt);
+    textData = JSON.parse(raw.replace(/```json\n?|```\n?/g,'').trim());
+  } catch(e) { throw new Error('Text generation failed: ' + e.message); }
+
+  // FLUX image
+  const imgPrompt = `Ultra-realistic cinematic DSLR 50mm historical scene: ${res.topic}. Cinematic lighting, museum-quality detail, 4k, historically accurate.`;
+  let base64Img;
+  try { base64Img = await fetchFluxImage(imgPrompt); }
+  catch(e) { throw new Error('Image generation failed: ' + e.message); }
+
+  // Composite
+  const composited = await compositeImage(base64Img, textData.short, profile.logoUrl);
+
+  // Update
+  userData.results = userData.results.map(r => r.id === res.id ? {
+    ...r, status: 'done',
+    shortText: textData.short, longText: textData.long,
+    imageUrl: `data:image/png;base64,${base64Img}`,
+    compositedImageUrl: composited
+  } : r);
+
+  scheduleSync(); renderResult(res.id);
+
+  // Auto-save to PC folder
+  if (exportDirHandle) {
+    try {
+      const folderName = profile.name.replace(/[^a-z0-9]/gi,'_');
+      const folder = await exportDirHandle.getDirectoryHandle(folderName, { create: true });
+      let max = 0;
+      for await (const entry of folder.values()) { if (entry.kind==='file'){ const n=parseInt(entry.name); if(!isNaN(n)&&n>max) max=n; } }
+      const next = max+1;
+      const iF = await folder.getFileHandle(`${next}.jpg`, { create: true });
+      const iW = await iF.createWritable();
+      await iW.write(await fetch(composited).then(r=>r.blob())); await iW.close();
+      const tF = await folder.getFileHandle(`${next}.txt`, { create: true });
+      const tW = await tF.createWritable();
+      await tW.write(textData.long||''); await tW.close();
+    } catch(e) { console.error('Auto-save error:', e); }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  BATCH PROCESSING
+// ═══════════════════════════════════════════
+async function processBatch() {
+  if (isProcessing) return;
+  if (!csvData.length)          { notify('Import a CSV/XLSX manifest first.', 'error'); return; }
+  if (!userData.apiKeys.length) { notify('Add a Gemini API key in the Vault tab.', 'error'); return; }
+  if (!getActiveWorker())       { notify('No active FLUX Worker. Check Workers tab.', 'error'); return; }
+
+  const selId = document.getElementById('sel-profile').value;
+  if (!selId) { notify('Select a target Guild.', 'error'); return; }
+
+  const targetProfiles = selId === 'ALL' ? userData.profiles : userData.profiles.filter(p=>p.id===selId);
+  if (!targetProfiles.length) { notify('No matching Guild found.', 'error'); return; }
+
+  let topics = [...csvData];
+  if (pickRandom) topics = [csvData[Math.floor(Math.random()*csvData.length)]];
+
+  const newResults = [];
+  for (const profile of targetProfiles) {
+    for (const t of topics) {
+      newResults.push({ id: Math.random().toString(36).substr(2,9), topic: t.topic, shortText:'', longText:'', imageUrl:'', compositedImageUrl:'', pageProfileId: profile.id, status:'pending' });
+    }
+  }
+
+  userData.results = [...newResults, ...userData.results];
+  scheduleSync(); renderFeed(); setProcessing(true); stopRequested = false;
+
+  for (const res of newResults) {
+    if (stopRequested) break;
+    try { await processOne(res); }
+    catch(e) {
+      userData.results = userData.results.map(r => r.id===res.id ? { ...r, status:'error', error:e.message } : r);
+      scheduleSync(); renderResult(res.id);
+    }
+  }
+
+  setProcessing(false); updateButtons();
+  if (!stopRequested) notify('Batch completed!', 'success');
+  else notify('Processing stopped.', 'info');
+}
+
+async function resumePending() {
+  const toResume = userData.results.filter(r=>r.status==='pending'||r.status==='error');
+  if (!toResume.length) { notify('No pending tasks.', 'info'); return; }
+  setProcessing(true); stopRequested = false;
+  for (const res of toResume) {
+    if (stopRequested) break;
+    try { await processOne(res); }
+    catch(e) { userData.results = userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r); scheduleSync(); renderResult(res.id); }
+  }
+  setProcessing(false); updateButtons(); notify('Resume complete.', 'success');
+}
+
+function stopProcessing() { stopRequested = true; }
+
+function clearResults() {
+  if (!confirm('Clear all generation history?')) return;
+  userData.results = []; scheduleSync(); renderFeed(); updateButtons();
+  notify('Archive cleared.', 'info');
+}
+
+function updateButtons() {
+  const hasDone    = userData.results.some(r=>r.status==='done');
+  const hasPending = userData.results.some(r=>r.status==='pending'||r.status==='error');
+  const eb = document.getElementById('export-btn');
+  const rb = document.getElementById('resume-btn');
+  const cb = document.getElementById('clear-btn');
+  if (eb) eb.style.display  = hasDone    ? 'inline-flex' : 'none';
+  if (rb) rb.style.display  = hasPending && !isProcessing ? 'inline-flex' : 'none';
+  if (cb) cb.style.display  = userData.results.length>0 && !isProcessing ? 'inline-flex' : 'none';
+}
+
+// ═══════════════════════════════════════════
+//  FEED RENDERING
+// ═══════════════════════════════════════════
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  if (!feed) return;
+  const emptyEl = document.getElementById('empty-feed');
+  if (emptyEl) emptyEl.style.display = userData.results.length===0 ? 'flex' : 'none';
+  const ids = new Set(userData.results.map(r=>r.id));
+  feed.querySelectorAll('.result-card').forEach(c=>{ if(!ids.has(c.dataset.id)) c.remove(); });
+  userData.results.forEach(r => {
+    if (!document.querySelector(`[data-id="${r.id}"]`)) {
+      const el = document.createElement('div');
+      el.className='result-card'; el.dataset.id=r.id;
+      el.innerHTML=buildCardHTML(r);
+      const firstCard = feed.querySelector('.result-card');
+      feed.insertBefore(el, firstCard || emptyEl);
+    }
+  });
+}
+
+function renderResult(id) {
+  const res = userData.results.find(r=>r.id===id); if (!res) return;
+  const el = document.querySelector(`[data-id="${id}"]`); if (!el) return;
+  el.innerHTML = buildCardHTML(res);
+  const emptyEl = document.getElementById('empty-feed');
+  if (emptyEl) emptyEl.style.display = 'none';
+}
+
+function updateResultStatus(id, status) {
+  userData.results = userData.results.map(r=>r.id===id?{...r,status}:r);
+  renderResult(id);
+}
+
+function buildCardHTML(res) {
+  const profile = userData.profiles.find(p=>p.id===res.pageProfileId);
+  const badge = {
+    done:`<span class="badge badge-done">Archived</span>`,
+    processing:`<span class="badge badge-processing"><span class="spinner sm"></span> Forging</span>`,
+    error:`<span class="badge badge-error">Error</span>`,
+    pending:`<span class="badge badge-pending">Pending</span>`,
+  }[res.status] || '';
+
+  const imgCol = res.status==='processing'
+    ? `<div class="result-img-placeholder"><span class="spinner"></span><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-top:8px;color:var(--text3);font-family:var(--mono)">Rendering…</div></div>`
+    : res.status==='done' && res.compositedImageUrl
+      ? `<img src="${res.compositedImageUrl}" alt="${res.topic}"/>`
+      : `<div class="result-img-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-top:8px;color:var(--text3);font-family:var(--mono)">Awaiting</div></div>`;
+
+  const content = res.status==='done' ? `
+    <div class="overlay-box">
+      <div class="overlay-label">Overlay Caption</div>
+      <div class="overlay-text">${res.shortText.replace(/<yellow>(.*?)<\/yellow>/g,'<span style="color:#FFD700;font-weight:800">$1</span>')}</div>
+    </div>
+    <div>
+      <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Social Chronicle</div>
+      <div class="long-text-box"><p>${res.longText}</p></div>
+    </div>
+  ` : res.status==='error' ? `
+    <div class="error-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><div class="error-title">Error</div><div class="error-msg">${res.error||'Unknown error'}</div></div>
+    </div>
+  ` : '';
+
+  return `<div class="result-inner">
+    <div class="result-img-col">${imgCol}</div>
+    <div class="result-content">
+      <div class="result-header">
+        <div>
+          <div class="result-guild">${profile?.logoUrl?`<img src="${profile.logoUrl}" alt=""/>`:''}
+            <span class="result-guild-name">${profile?.name||'Unknown'}</span>
+          </div>
+          <div class="result-topic">${res.topic}</div>
+        </div>
+        ${badge}
+      </div>
+      ${content}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT / PC FOLDER
+// ═══════════════════════════════════════════
+let exportDirHandle = null;
+
+async function connectFolder() {
+  if (!('showDirectoryPicker' in window)) { notify('Use Chrome or Edge for folder access.', 'error'); return; }
+  try {
+    exportDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    document.getElementById('folder-label').textContent = 'Folder ✓';
+    document.getElementById('folder-btn').className = 'btn btn-success btn-sm';
+    notify('PC Folder sync active!', 'success');
+  } catch(e) { if (e.name!=='AbortError') notify('Folder connection failed.', 'error'); }
+}
+
+async function exportAll() {
+  const done = userData.results.filter(r=>r.status==='done');
+  if (!done.length) return;
+
+  if (exportDirHandle) {
+    for (const res of done) {
+      try {
+        const profile = userData.profiles.find(p=>p.id===res.pageProfileId);
+        const folderName = (profile?.name||'Uncategorized').replace(/[^a-z0-9]/gi,'_');
+        const folder = await exportDirHandle.getDirectoryHandle(folderName, { create: true });
+        let max=0;
+        for await (const entry of folder.values()) { if(entry.kind==='file'){const n=parseInt(entry.name);if(!isNaN(n)&&n>max)max=n;} }
+        const next=max+1;
+        const iF=await folder.getFileHandle(`${next}.jpg`,{create:true}); const iW=await iF.createWritable();
+        await iW.write(await fetch(res.compositedImageUrl).then(r=>r.blob())); await iW.close();
+        const tF=await folder.getFileHandle(`${next}.txt`,{create:true}); const tW=await tF.createWritable();
+        await tW.write(res.longText); await tW.close();
+      } catch(e) { console.error('Export error:',e); }
+    }
+    notify('Exported to PC folder!', 'success'); return;
+  }
+
+  // Fallback ZIP
+  const zip = new JSZip();
+  for (const res of done) {
+    const profile = userData.profiles.find(p=>p.id===res.pageProfileId);
+    const folderName = (profile?.name||'Uncategorized').replace(/[^a-z0-9]/gi,'_');
+    const baseName = res.topic.replace(/[^a-z0-9]/gi,'_').substring(0,30);
+    const folder = zip.folder(folderName);
+    if (res.compositedImageUrl) folder.file(`${baseName}.jpg`, res.compositedImageUrl.split(',')[1], { base64:true });
+    folder.file(`${baseName}.txt`, res.longText);
+  }
+  const blob = await zip.generateAsync({ type:'blob' });
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`History_Archive_${new Date().toISOString().slice(0,10)}.zip`; a.click();
+  notify('ZIP downloaded!', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  RENDER ALL
+// ═══════════════════════════════════════════
+function renderAll() {
+  renderKeys();
+  renderGuilds();
+  renderProfileSelect();
+  renderWorkers();
+  renderFeed();
+  updateButtons();
+  updateWarnings();
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+setupPinInputs('lp');
+setupPinInputs('rp');
+
+// Show proxy setup if not configured
+if (!PROXY_URL) {
+  document.getElementById('proxy-banner').style.display = 'block';
+  document.getElementById('proxy-field').style.display = 'block';
+}
+
+// Add proxy URL save handler in auth screen
+document.getElementById('proxy-url-input').addEventListener('change', function() {
+  let url = this.value.trim();
+  if (url) { if (!url.endsWith('/')) url += '/'; saveProxyUrl(url); }
+});
+
+// Try auto-login from saved session
+(async () => {
+  const session = loadSession();
+  if (session && PROXY_URL) {
+    try {
+      document.getElementById('login-username').value = session.username;
+      currentUser = session;
+      await loadUserData();
+      enterApp();
+    } catch(e) {
+      clearSession(); currentUser = null;
+      // Stay on login screen
+    }
+  }
+})();
 </script>
 </body>
 </html>
