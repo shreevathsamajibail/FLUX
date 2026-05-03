@@ -16,17 +16,17 @@
       --accent: #e2ff6e;
       --accent-dim: rgba(226,255,110,0.08);
       --red: #ff5f5f;
+      --red-dim: rgba(255,95,95,0.08);
+      --amber: #ffb347;
+      --amber-dim: rgba(255,179,71,0.08);
       --radius: 10px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Syne', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
+      background: var(--bg); color: var(--text); min-height: 100vh;
     }
-
     .wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
 
     /* Header */
@@ -43,24 +43,42 @@
     .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 2s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-    /* ── Daily counter ── */
+    /* Daily counter */
     .counter-strip {
       display: flex; align-items: center; justify-content: space-between;
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); padding: .9rem 1.25rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.5rem; transition: border-color .3s;
     }
+    .counter-strip.limit { border-color: rgba(255,179,71,.35); background: var(--amber-dim); }
     .counter-left { display: flex; align-items: baseline; gap: 10px; }
     .counter-num {
       font-family: 'JetBrains Mono', monospace;
       font-size: 32px; font-weight: 500; color: var(--accent); line-height: 1;
-      transition: transform .2s;
+      transition: transform .2s, color .3s;
     }
     .counter-num.bump { transform: scale(1.15); }
+    .counter-num.limit { color: var(--amber); }
     .counter-label { font-size: 13px; color: var(--muted); }
     .counter-right {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px; color: var(--muted); text-align: right; line-height: 1.6;
+    }
+
+    /* Daily limit banner */
+    #limit-banner {
+      display: none;
+      background: var(--amber-dim); border: 1px solid rgba(255,179,71,.3);
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem; animation: up .3s ease;
+    }
+    #limit-banner .banner-title {
+      font-size: 14px; font-weight: 700; color: var(--amber); margin-bottom: 4px;
+    }
+    #limit-banner .banner-msg { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    #limit-banner .banner-reset {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--amber); margin-top: 8px;
     }
 
     /* Fields */
@@ -175,13 +193,20 @@
     <div class="live-dot"><div class="dot"></div>Workers AI · Live</div>
   </header>
 
-  <!-- ── Daily counter (100% accurate) ── -->
-  <div class="counter-strip">
+  <!-- Daily counter -->
+  <div class="counter-strip" id="counter-strip">
     <div class="counter-left">
       <div class="counter-num" id="count-num">0</div>
       <div class="counter-label">images generated today</div>
     </div>
     <div class="counter-right" id="count-meta">resets at midnight</div>
+  </div>
+
+  <!-- Daily limit banner (shown only when 4006 hit) -->
+  <div id="limit-banner">
+    <div class="banner-title">⏳ Daily free limit reached</div>
+    <div class="banner-msg">Cloudflare Workers AI gives 10,000 free neurons per day. You've used them all up for today — no action needed, it resets automatically.</div>
+    <div class="banner-reset" id="banner-reset"></div>
   </div>
 
   <!-- Model -->
@@ -274,7 +299,7 @@
 <script>
   const WORKER = "https://flux.shreevathsa2k27.workers.dev/";
 
-  // ── Daily counter — resets at local midnight, 100% real ──
+  // ── Daily counter — resets at local midnight, only counts successes ──
   function dayKey() {
     const d = new Date();
     return `flux_day_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
@@ -292,13 +317,27 @@
       el.classList.add('bump');
       setTimeout(() => el.classList.remove('bump'), 200);
     }
-    // Countdown to local midnight
     const now = new Date();
     const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
     const ms = midnight - now;
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     document.getElementById('count-meta').textContent = `resets in ${h}h ${m}m`;
+  }
+
+  // ── Show/hide daily limit banner ──
+  function showLimitBanner(resetsIn) {
+    const banner = document.getElementById('limit-banner');
+    const strip = document.getElementById('counter-strip');
+    const num = document.getElementById('count-num');
+    banner.style.display = 'block';
+    strip.classList.add('limit');
+    num.classList.add('limit');
+    document.getElementById('banner-reset').textContent =
+      `⏱ Resets in ${resetsIn} at UTC midnight`;
+    document.getElementById('btn').disabled = true;
+    document.getElementById('btn-label').textContent = 'Limit reached — come back later';
+    setStatus('');
   }
 
   // ── Model config ──
@@ -359,6 +398,15 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+
+      // ── Daily limit hit ──
+      if (res.status === 429) {
+        const data = await res.json();
+        showLimitBanner(data.resetsIn || 'soon');
+        setLoading(false);
+        return;
+      }
+
       if (!res.ok) {
         const t = await res.text();
         let e; try { e = JSON.parse(t); } catch {}
@@ -372,15 +420,17 @@
       const dl = document.getElementById('dl-btn');
       dl.href = url;
       dl.download = `flux-${Date.now()}.jpg`;
-      document.getElementById('result-meta').textContent = `"${p.slice(0, 90)}${p.length > 90 ? '…' : ''}"`;
+      document.getElementById('result-meta').textContent =
+        `"${p.slice(0, 90)}${p.length > 90 ? '…' : ''}"`;
       document.getElementById('result').style.display = 'block';
 
-      bumpCount(); // ← only increments on successful image
+      bumpCount();
       setStatus(`Done · ${w}×${h} · ${s} step${s !== 1 ? 's' : ''}`);
 
       sessionHistory.unshift({ url, p });
       if (sessionHistory.length > 12) sessionHistory.pop();
       renderHistory();
+
     } catch (err) {
       setStatus(err.message, true);
     } finally {
@@ -417,7 +467,6 @@
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
   });
 
-  // Init
   onModel();
   renderCounter(false);
   setInterval(() => renderCounter(false), 60000);
