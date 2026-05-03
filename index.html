@@ -189,6 +189,75 @@
       font-family: 'JetBrains Mono', monospace; font-size: 11px;
       color: var(--muted); text-align: center; margin-top: -8px; margin-bottom: 12px;
     }
+
+    /* Auto stress test button */
+    .btn-auto {
+      width: 100%; padding: 13px; background: transparent; color: var(--accent);
+      border: 1px solid var(--accent); border-radius: var(--radius);
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all .2s; display: flex; align-items: center;
+      justify-content: center; gap: 8px; margin-bottom: 1rem;
+    }
+    .btn-auto:hover { background: var(--accent-dim); }
+    .btn-auto.running {
+      background: var(--red-dim); border-color: var(--red); color: var(--red);
+      animation: pulse-border 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-border {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,95,95,0); }
+      50%      { box-shadow: 0 0 0 4px rgba(255,95,95,0.15); }
+    }
+
+    /* Stress test stats panel */
+    #stress-panel {
+      display: none; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem;
+      animation: up .3s ease;
+    }
+    #stress-panel.running { border-color: rgba(255,95,95,.25); }
+    .stress-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); font-weight: 600; margin-bottom: .75rem;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stress-title .blink-red {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--red);
+      animation: blink 1s ease-in-out infinite;
+    }
+    .stress-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    @media (max-width: 480px) { .stress-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stress-stat {
+      background: rgba(255,255,255,.03); border-radius: 8px;
+      padding: 10px; text-align: center;
+    }
+    .stress-stat .sv {
+      font-family: 'JetBrains Mono', monospace; font-size: 22px;
+      font-weight: 500; color: var(--accent); line-height: 1;
+      transition: transform .15s;
+    }
+    .stress-stat .sv.bump { transform: scale(1.2); }
+    .stress-stat .sv.red  { color: var(--red); }
+    .stress-stat .sl {
+      font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .stress-log {
+      margin-top: .75rem; max-height: 120px; overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--muted); line-height: 1.8;
+    }
+    .stress-log .log-ok   { color: var(--accent); }
+    .stress-log .log-err  { color: var(--red); }
+    .stress-log .log-warn { color: var(--amber); }
+    .stress-log .log-info { color: var(--muted); }
+
+    /* Auto-generated prompt preview */
+    #auto-prompt-preview {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--muted); font-style: italic; margin-top: .5rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
@@ -282,6 +351,41 @@
     <div class="spinner" id="spinner"></div>
     <span id="btn-label">Generate image</span>
   </button>
+
+  <!-- Auto Stress Test button -->
+  <button class="btn-auto" id="auto-btn" onclick="toggleAuto()">
+    <span id="auto-icon">⚡</span>
+    <span id="auto-label">Auto Stress Test — find the free limit</span>
+  </button>
+
+  <!-- Stress Test live stats panel -->
+  <div id="stress-panel">
+    <div class="stress-title">
+      <div class="blink-red" id="stress-blink" style="display:none"></div>
+      <span id="stress-panel-title">Stress Test Results</span>
+    </div>
+    <div class="stress-grid">
+      <div class="stress-stat">
+        <div class="sv" id="st-sent">0</div>
+        <div class="sl">Sent</div>
+      </div>
+      <div class="stress-stat">
+        <div class="sv" id="st-ok">0</div>
+        <div class="sl">✓ Success</div>
+      </div>
+      <div class="stress-stat">
+        <div class="sv red" id="st-fail">0</div>
+        <div class="sl">✗ Failed</div>
+      </div>
+      <div class="stress-stat">
+        <div class="sv" id="st-rate">—</div>
+        <div class="sl">img / min</div>
+      </div>
+    </div>
+    <div id="auto-prompt-preview"></div>
+    <div class="stress-log" id="stress-log"></div>
+  </div>
+
   <div id="status"></div>
 
   <!-- Result -->
@@ -494,6 +598,230 @@
   document.getElementById('prompt').addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
   });
+
+  // ── Auto Stress Test ──────────────────────────────────────────────────────
+  // Fires one request at a time (sequential, not parallel) so we can
+  // accurately count how many images Cloudflare allows before hitting 4006.
+
+  const RANDOM_SUBJECTS  = ['astronaut','samurai','dragon','cyberpunk city','ancient temple','neon forest','robot geisha','deep ocean creature','desert wanderer','aurora landscape','crystal cave','futuristic Tokyo','haunted lighthouse','alien marketplace','mountain monastery'];
+  const RANDOM_STYLES    = ['cinematic lighting','oil painting','hyperrealistic 8k','anime style','watercolor','neon noir','golden hour','macro photography','impressionist','dark fantasy','soft pastel','low poly art','cel shading','studio ghibli'];
+  const RANDOM_MOODS     = ['mysterious','epic','serene','chaotic','melancholic','vibrant','eerie','majestic','dreamy','intense'];
+
+  function randomPrompt() {
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    return `${pick(RANDOM_SUBJECTS)}, ${pick(RANDOM_STYLES)}, ${pick(RANDOM_MOODS)}`;
+  }
+
+  let autoRunning   = false;
+  let autoAbort     = false;
+  let autoSent      = 0;
+  let autoOk        = 0;
+  let autoFail      = 0;
+  let autoStartTime = 0;
+
+  function stressLog(msg, type = 'info') {
+    const log = document.getElementById('stress-log');
+    const line = document.createElement('div');
+    line.className = `log-${type}`;
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    line.textContent = `[${ts}] ${msg}`;
+    log.prepend(line);
+    // Keep log tidy
+    while (log.children.length > 40) log.removeChild(log.lastChild);
+  }
+
+  function bumpStat(id) {
+    const el = document.getElementById(id);
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 150);
+  }
+
+  function updateStressStats() {
+    document.getElementById('st-sent').textContent = autoSent;
+    document.getElementById('st-ok').textContent   = autoOk;
+    document.getElementById('st-fail').textContent = autoFail;
+
+    if (autoOk > 0 && autoStartTime) {
+      const mins = (Date.now() - autoStartTime) / 60000;
+      const rate = mins > 0.05 ? (autoOk / mins).toFixed(1) : '…';
+      document.getElementById('st-rate').textContent = rate;
+    }
+  }
+
+  async function runOnceAuto() {
+    const p   = randomPrompt();
+    const mid = modelId();
+    const m   = MODELS[mid];
+    const [w, h] = sizeWH();
+    const s   = parseInt(document.getElementById('steps').value);
+    const guidance = m.guidance
+      ? parseFloat(document.getElementById('guidance').value)
+      : undefined;
+
+    document.getElementById('auto-prompt-preview').textContent = `→ "${p}"`;
+
+    const body = { prompt: p, model: mid, width: w, height: h, steps: s };
+    if (guidance !== undefined) body.guidance = guidance;
+
+    autoSent++;
+    bumpStat('st-sent');
+    updateStressStats();
+
+    try {
+      const res = await fetch(WORKER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (res.status === 429) {
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if (data.error === 'DAILY_LIMIT') {
+          autoFail++;
+          bumpStat('st-fail');
+          updateStressStats();
+          stressLog(`🛑 DAILY LIMIT HIT after ${autoOk} successful images! Resets in ${data.resetsIn || 'soon'}`, 'warn');
+          showLimitBanner(data.resetsIn || 'soon');
+          stopAuto(true);
+          return 'limit';
+        }
+        autoFail++;
+        bumpStat('st-fail');
+        stressLog(`⚠ Rate limited (non-daily) — pausing 5s`, 'warn');
+        updateStressStats();
+        await new Promise(r => setTimeout(r, 5000));
+        return 'retry';
+      }
+
+      if (!res.ok) {
+        autoFail++;
+        bumpStat('st-fail');
+        stressLog(`✗ HTTP ${res.status}`, 'err');
+        updateStressStats();
+        return 'error';
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('image')) {
+        const t = await res.text();
+        let e; try { e = JSON.parse(t); } catch {}
+        autoFail++;
+        bumpStat('st-fail');
+        stressLog(`✗ Bad response: ${e?.error || 'not an image'}`, 'err');
+        updateStressStats();
+        return 'error';
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+
+      // Show latest image in result panel
+      document.getElementById('out-img').src = url;
+      document.getElementById('dl-btn').href = url;
+      document.getElementById('dl-btn').download = `flux-auto-${Date.now()}.jpg`;
+      document.getElementById('result-meta').textContent = `[auto] "${p.slice(0, 80)}"`;
+      document.getElementById('result').style.display = 'block';
+
+      autoOk++;
+      bumpStat('st-ok');
+      bumpCount();
+      stressLog(`✓ #${autoOk} — "${p.slice(0, 55)}…"`, 'ok');
+      updateStressStats();
+
+      sessionHistory.unshift({ url, p });
+      if (sessionHistory.length > 12) sessionHistory.pop();
+      renderHistory();
+
+      return 'ok';
+
+    } catch (err) {
+      autoFail++;
+      bumpStat('st-fail');
+      stressLog(`✗ Network error: ${err.message}`, 'err');
+      updateStressStats();
+      return 'error';
+    }
+  }
+
+  async function autoLoop() {
+    stressLog('🚀 Stress test started — firing sequential requests…', 'info');
+    autoStartTime = Date.now();
+
+    while (!autoAbort) {
+      const result = await runOnceAuto();
+      if (autoAbort) break;
+      if (result === 'limit') break;
+      // Small gap between requests to be a good citizen
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (!autoAbort) {
+      stressLog(`✅ Test complete — ${autoOk} images succeeded, ${autoFail} failed`, 'info');
+    } else {
+      stressLog(`⏹ Test stopped manually — ${autoOk} images succeeded`, 'info');
+    }
+
+    document.getElementById('stress-panel-title').textContent =
+      `Stress Test — ${autoOk} images before limit`;
+    document.getElementById('auto-prompt-preview').textContent = '';
+  }
+
+  function toggleAuto() {
+    if (autoRunning) {
+      stopAuto(false);
+    } else {
+      startAuto();
+    }
+  }
+
+  function startAuto() {
+    autoRunning   = true;
+    autoAbort     = false;
+    autoSent      = 0;
+    autoOk        = 0;
+    autoFail      = 0;
+    autoStartTime = 0;
+
+    // Reset stats display
+    ['st-sent','st-ok','st-fail'].forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('st-rate').textContent = '—';
+    document.getElementById('stress-log').innerHTML = '';
+    document.getElementById('auto-prompt-preview').textContent = '';
+    document.getElementById('stress-panel-title').textContent = 'Live Stress Test';
+
+    // UI state
+    const ab = document.getElementById('auto-btn');
+    ab.classList.add('running');
+    document.getElementById('auto-icon').textContent = '■';
+    document.getElementById('auto-label').textContent = 'Stop Stress Test';
+    document.getElementById('btn').disabled = true;
+
+    document.getElementById('stress-panel').style.display = 'block';
+    document.getElementById('stress-panel').classList.add('running');
+    document.getElementById('stress-blink').style.display = 'block';
+
+    autoLoop().finally(() => {
+      autoRunning = false;
+      document.getElementById('stress-panel').classList.remove('running');
+      document.getElementById('stress-blink').style.display = 'none';
+    });
+  }
+
+  function stopAuto(limitHit) {
+    autoAbort = true;
+    autoRunning = false;
+
+    const ab = document.getElementById('auto-btn');
+    ab.classList.remove('running');
+    document.getElementById('auto-icon').textContent = '⚡';
+    document.getElementById('auto-label').textContent = limitHit
+      ? 'Limit reached — restart tomorrow'
+      : 'Auto Stress Test — find the free limit';
+    ab.disabled = limitHit;
+    document.getElementById('btn').disabled = false;
+  }
+  // ── End Auto Stress Test ──────────────────────────────────────────────────
 
   onModel();
   renderCounter(false);
