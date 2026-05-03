@@ -183,6 +183,12 @@
     .h-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: all .15s; }
     .h-thumb:hover { border-color: var(--accent); transform: scale(1.04); }
     .h-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Retry button shown on non-limit errors */
+    .retry-hint {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--muted); text-align: center; margin-top: -8px; margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
@@ -202,7 +208,7 @@
     <div class="counter-right" id="count-meta">resets at midnight</div>
   </div>
 
-  <!-- Daily limit banner (shown only when 4006 hit) -->
+  <!-- Daily limit banner (shown ONLY on confirmed 429 + DAILY_LIMIT from server) -->
   <div id="limit-banner">
     <div class="banner-title">⏳ Daily free limit reached</div>
     <div class="banner-msg">Cloudflare Workers AI gives 10,000 free neurons per day. You've used them all up for today — no action needed, it resets automatically.</div>
@@ -299,7 +305,7 @@
 <script>
   const WORKER = "https://flux.shreevathsa2k27.workers.dev/";
 
-  // ── Daily counter — resets at local midnight, only counts successes ──
+  // ── Daily counter — resets at local midnight, only counts confirmed successes ──
   function dayKey() {
     const d = new Date();
     return `flux_day_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
@@ -325,11 +331,13 @@
     document.getElementById('count-meta').textContent = `resets in ${h}h ${m}m`;
   }
 
-  // ── Show/hide daily limit banner ──
+  // ── Show daily limit banner ──
+  // ONLY called when the server explicitly returns { error: "DAILY_LIMIT" } with status 429.
+  // Never triggered by network errors, timeouts, or other failures.
   function showLimitBanner(resetsIn) {
     const banner = document.getElementById('limit-banner');
-    const strip = document.getElementById('counter-strip');
-    const num = document.getElementById('count-num');
+    const strip  = document.getElementById('counter-strip');
+    const num    = document.getElementById('count-num');
     banner.style.display = 'block';
     strip.classList.add('limit');
     num.classList.add('limit');
@@ -364,7 +372,7 @@
     el.max = m.maxSteps; el.value = m.def;
     document.getElementById('steps-val').textContent = m.def;
     const gc = document.getElementById('ctrl-guidance');
-    gc.style.opacity = m.guidance ? '1' : '0.35';
+    gc.style.opacity      = m.guidance ? '1'    : '0.35';
     gc.style.pointerEvents = m.guidance ? 'auto' : 'none';
   }
 
@@ -383,7 +391,9 @@
 
     const mid = modelId(), m = MODELS[mid];
     const [w, h] = sizeWH(), s = stepCount();
-    const guidance = m.guidance ? parseFloat(document.getElementById('guidance').value) : undefined;
+    const guidance = m.guidance
+      ? parseFloat(document.getElementById('guidance').value)
+      : undefined;
 
     setLoading(true);
     setStatus('Sending to Workers AI…');
@@ -399,10 +409,18 @@
         body: JSON.stringify(body)
       });
 
-      // ── Daily limit hit ──
+      // ── Only treat as daily limit if server explicitly says so ──
       if (res.status === 429) {
-        const data = await res.json();
-        showLimitBanner(data.resetsIn || 'soon');
+        let data = {};
+        try { data = await res.json(); } catch {}
+
+        // Guard: only show limit banner if server confirms it's a DAILY_LIMIT
+        if (data.error === "DAILY_LIMIT") {
+          showLimitBanner(data.resetsIn || 'soon');
+        } else {
+          // Some other rate limit (e.g. per-minute throttle) — show as regular error
+          setStatus('Rate limited — please wait a moment and try again.', true);
+        }
         setLoading(false);
         return;
       }
@@ -410,20 +428,29 @@
       if (!res.ok) {
         const t = await res.text();
         let e; try { e = JSON.parse(t); } catch {}
-        throw new Error(e?.error || `Error ${res.status}`);
+        throw new Error(e?.error || `Server error ${res.status}`);
+      }
+
+      // Confirm we got an image (not an accidental JSON error body)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('image')) {
+        const t = await res.text();
+        let e; try { e = JSON.parse(t); } catch {}
+        throw new Error(e?.error || 'Unexpected response — expected an image');
       }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const url  = URL.createObjectURL(blob);
 
       document.getElementById('out-img').src = url;
       const dl = document.getElementById('dl-btn');
-      dl.href = url;
+      dl.href     = url;
       dl.download = `flux-${Date.now()}.jpg`;
       document.getElementById('result-meta').textContent =
         `"${p.slice(0, 90)}${p.length > 90 ? '…' : ''}"`;
       document.getElementById('result').style.display = 'block';
 
+      // Only bump count on a confirmed successful image
       bumpCount();
       setStatus(`Done · ${w}×${h} · ${s} step${s !== 1 ? 's' : ''}`);
 
@@ -445,7 +472,8 @@
   }
   function setStatus(msg, err) {
     const el = document.getElementById('status');
-    el.textContent = msg; el.className = err ? 'err' : '';
+    el.textContent = msg;
+    el.className = err ? 'err' : '';
   }
 
   function renderHistory() {
