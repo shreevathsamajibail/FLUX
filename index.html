@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FLUX — AI Image Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.15);
+      --text: #f0eee8;
+      --muted: #6b6a72;
+      --accent: #c8b8ff;
+      --accent-dim: rgba(200,184,255,0.12);
+      --accent-glow: rgba(200,184,255,0.25);
+      --green: #7effc4;
+      --green-dim: rgba(126,255,196,0.1);
+      --red: #ff7e7e;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radial glow top */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(200,184,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.25rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 3rem 0 2.5rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .logo-word {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      letter-spacing: -1px;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-sub {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-dim);
+      border: 1px solid rgba(126,255,196,0.2);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--green);
+      font-weight: 500;
+      white-space: nowrap;
+      align-self: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Prompt card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .card:focus-within {
+      border-color: var(--border-hover);
+    }
+
+    .prompt-area {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.65;
+      padding: 1.25rem 1.5rem 1rem;
+      resize: none;
+      min-height: 120px;
+      caret-color: var(--accent);
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .prompt-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .prompt-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .char-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Controls row ── */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+    }
+
+    .ctrl {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .ctrl label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .ctrl select,
+    .ctrl input[type="range"] {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .ctrl select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0 center;
+      padding-right: 18px;
+    }
+
+    .ctrl select option {
+      background: #1a1a24;
+      color: var(--text);
+    }
+
+    .steps-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border-hover);
+      outline: none;
+      margin-top: 8px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* ── Generate button ── */
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-generate::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: translateX(-100%);
+    }
+
+    .btn-generate:not(:disabled):hover {
+      background: #d6caff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+
+    .btn-generate:not(:disabled):hover::after {
+      transform: translateX(100%);
+      transition: transform 0.5s ease;
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #0a0a0f;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Status ── */
+    #status {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 1rem;
+      font-family: 'DM Mono', monospace;
+      min-height: 18px;
+      transition: color 0.2s;
+    }
+
+    #status.error { color: var(--red); }
+
+    /* ── Result ── */
+    #result-wrap {
+      display: none;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .result-img-wrap {
+      position: relative;
+      background: var(--surface2);
+    }
+
+    #result-img {
+      width: 100%;
+      display: block;
+      border-radius: 0;
+    }
+
+    .result-meta {
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .result-prompt-text {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      flex: 1;
+      font-style: italic;
+    }
+
+    .btn-dl {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid var(--border-hover);
+      border-radius: 100px;
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.15s;
+      white-space: nowrap;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .btn-dl:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── History strip ── */
+    #history-wrap {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .history-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+    }
+
+    .hist-thumb {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+      background: var(--surface2);
+    }
+
+    .hist-thumb:hover {
+      border-color: var(--accent);
+      transform: scale(1.03);
+    }
+
+    .hist-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .footer-link {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <div class="logo-word">FLUX</div>
+      <div class="logo-sub">AI Image Studio</div>
+    </div>
+    <div class="header-badge">
+      <div class="dot"></div>
+      Workers AI · Live
+    </div>
+  </header>
+
+  <!-- Prompt -->
+  <div class="card prompt-area">
+    <textarea id="prompt" rows="4"
+      placeholder="a hyperrealistic astronaut floating above a neon Tokyo skyline, cinematic lighting, 8k…"
+    ></textarea>
+    <div class="prompt-footer">
+      <div class="prompt-chips">
+        <span class="chip" onclick="appendChip('cinematic lighting')">cinematic lighting</span>
+        <span class="chip" onclick="appendChip('4k ultra detailed')">4k ultra detailed</span>
+        <span class="chip" onclick="appendChip('golden hour')">golden hour</span>
+        <span class="chip" onclick="appendChip('photorealistic')">photorealistic</span>
+        <span class="chip" onclick="appendChip('anime style')">anime style</span>
+      </div>
+      <div class="char-count" id="char-count">0</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl">
+      <label>Aspect ratio</label>
+      <select id="size">
+        <option value="1024x1024">1:1 Square</option>
+        <option value="1344x768">16:9 Wide</option>
+        <option value="768x1344">9:16 Portrait</option>
+        <option value="1152x896">4:3 Standard</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Steps — <span class="steps-val" id="steps-val">4</span></label>
+      <input type="range" id="steps" min="1" max="8" value="4" step="1"
+             oninput="document.getElementById('steps-val').textContent=this.value" />
+    </div>
+    <div class="ctrl" style="display:flex;flex-direction:column;justify-content:center;">
+      <label>Model</label>
+      <div style="font-size:13px;color:var(--text);font-weight:400;">flux-1-schnell</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Black Forest Labs</div>
+    </div>
+  </div>
+
+  <!-- Button -->
+  <button class="btn-generate" id="btn" onclick="generate()">
+    <div class="spinner" id="spinner"></div>
+    <span id="btn-label">Generate image</span>
+  </button>
+
+  <div id="status"></div>
+
+  <!-- Result -->
+  <div id="result-wrap">
+    <div class="result-card">
+      <div class="result-img-wrap">
+        <img id="result-img" alt="Generated image" />
+      </div>
+      <div class="result-meta">
+        <div class="result-prompt-text" id="result-prompt"></div>
+        <a class="btn-dl" id="dl-btn" download="flux-image.jpg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+          </svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div id="history-wrap">
+    <div class="history-label">Recent generations</div>
+    <div class="history-grid" id="history-grid"></div>
+  </div>
+
+  <footer>
+    <span>Powered by <a class="footer-link" href="https://developers.cloudflare.com/workers-ai/" target="_blank">Cloudflare Workers AI</a></span>
+    <span style="font-family:'DM Mono',monospace;">flux.shreevathsa2k27.workers.dev</span>
+  </footer>
+
+</div>
+
+<script>
+  const WORKER_URL = "https://flux.shreevathsa2k27.workers.dev/";
+
+  const promptEl   = document.getElementById("prompt");
+  const charCount  = document.getElementById("char-count");
+  const btn        = document.getElementById("btn");
+  const btnLabel   = document.getElementById("btn-label");
+  const spinner    = document.getElementById("spinner");
+  const statusEl   = document.getElementById("status");
+  const resultWrap = document.getElementById("result-wrap");
+  const resultImg  = document.getElementById("result-img");
+  const resultPrompt = document.getElementById("result-prompt");
+  const dlBtn      = document.getElementById("dl-btn");
+  const historyWrap = document.getElementById("history-wrap");
+  const historyGrid = document.getElementById("history-grid");
+
+  const history = [];
+
+  promptEl.addEventListener("input", () => {
+    charCount.textContent = promptEl.value.length;
+  });
+
+  function appendChip(text) {
+    const cur = promptEl.value.trim();
+    promptEl.value = cur ? cur + ", " + text : text;
+    charCount.textContent = promptEl.value.length;
+    promptEl.focus();
+  }
+
+  function setLoading(on) {
+    btn.disabled = on;
+    spinner.style.display = on ? "block" : "none";
+    btnLabel.textContent = on ? "Generating…" : "Generate image";
+  }
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.className = isError ? "error" : "";
+  }
+
+  async function generate() {
+    const prompt = promptEl.value.trim();
+    if (!prompt) {
+      setStatus("Please enter a prompt first.", true);
+      promptEl.focus();
+      return;
+    }
+
+    const sizeVal = document.getElementById("size").value;
+    const [width, height] = sizeVal.split("x").map(Number);
+    const steps = parseInt(document.getElementById("steps").value);
+
+    setLoading(true);
+    setStatus("Sending to Workers AI… (10–25 sec)");
+    resultWrap.style.display = "none";
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, width, height, steps }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Worker error ${res.status}: ${errText}`);
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+
+      resultImg.src = url;
+      dlBtn.href = url;
+      resultPrompt.textContent = `"${prompt}"`;
+      resultWrap.style.display = "block";
+
+      // Add to history
+      history.unshift({ url, prompt });
+      if (history.length > 8) history.pop();
+      renderHistory();
+
+      setStatus("Done! " + width + "×" + height + " · " + steps + " steps");
+    } catch (err) {
+      setStatus(err.message, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderHistory() {
+    if (history.length < 2) return;
+    historyWrap.style.display = "block";
+    historyGrid.innerHTML = history.map((h, i) =>
+      `<div class="hist-thumb" onclick="loadHistory(${i})" title="${h.prompt}">
+         <img src="${h.url}" alt="history ${i}" loading="lazy" />
+       </div>`
+    ).join("");
+  }
+
+  function loadHistory(i) {
+    const h = history[i];
+    resultImg.src = h.url;
+    dlBtn.href = h.url;
+    resultPrompt.textContent = `"${h.prompt}"`;
+    resultWrap.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Enter key submits
+  promptEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) generate();
+  });
+</script>
+</body>
+</html>
