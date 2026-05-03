@@ -21,484 +21,242 @@
       --green: #7effc4;
       --green-dim: rgba(126,255,196,0.1);
       --red: #ff7e7e;
+      --amber: #ffc87e;
+      --blue: #7eb8ff;
       --radius: 14px;
       --radius-sm: 8px;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'Outfit', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
     }
-
-    /* Subtle grid background */
     body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+      content: ''; position: fixed; inset: 0;
       background-image:
         linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-      background-size: 48px 48px;
-      pointer-events: none;
-      z-index: 0;
+      background-size: 48px 48px; pointer-events: none; z-index: 0;
     }
-
-    /* Radial glow top */
     body::after {
-      content: '';
-      position: fixed;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 700px;
-      height: 400px;
+      content: ''; position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
       background: radial-gradient(ellipse, rgba(200,184,255,0.08) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
+      pointer-events: none; z-index: 0;
     }
+    .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 0 1.25rem 4rem; }
 
-    .wrap {
-      position: relative;
-      z-index: 1;
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 1.25rem 4rem;
-    }
-
-    /* ── Header ── */
-    header {
-      padding: 3rem 0 2.5rem;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .logo {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
+    /* Header */
+    header { padding: 3rem 0 2rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .logo { display: flex; flex-direction: column; gap: 6px; }
     .logo-word {
-      font-family: 'DM Serif Display', serif;
-      font-size: 42px;
-      letter-spacing: -1px;
-      line-height: 1;
+      font-family: 'DM Serif Display', serif; font-size: 42px; letter-spacing: -1px; line-height: 1;
       background: linear-gradient(135deg, #fff 30%, var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .logo-sub {
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-
+    .logo-sub { font-size: 12px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; }
     .header-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--green-dim);
-      border: 1px solid rgba(126,255,196,0.2);
-      border-radius: 100px;
-      padding: 6px 14px;
-      font-size: 12px;
-      color: var(--green);
-      font-weight: 500;
-      white-space: nowrap;
-      align-self: center;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--green-dim); border: 1px solid rgba(126,255,196,0.2);
+      border-radius: 100px; padding: 6px 14px; font-size: 12px; color: var(--green); font-weight: 500;
+      white-space: nowrap; align-self: center;
     }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s ease-in-out infinite;
+    /* Neuron Bar */
+    .neuron-bar {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.1rem 1.25rem; margin-bottom: 1.25rem;
+      display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.25rem;
     }
+    @media (max-width: 520px) { .neuron-bar { grid-template-columns: 1fr; } .neu-right { text-align: left !important; } }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+    .neu-left { display: flex; flex-direction: column; gap: 3px; }
+    .neu-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+    .neu-numbers { display: flex; align-items: baseline; gap: 5px; margin-top: 1px; }
+    .neu-remaining {
+      font-family: 'DM Mono', monospace; font-size: 30px; font-weight: 500; color: var(--green);
+      transition: color 0.4s; line-height: 1;
     }
+    .neu-remaining.warn { color: var(--amber); }
+    .neu-remaining.low  { color: var(--red); }
+    .neu-of { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+    .neu-reset { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
-    /* ── Prompt card ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 1rem;
-      transition: border-color 0.2s;
+    .neu-mid { display: flex; flex-direction: column; gap: 7px; }
+    .track-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+    .track-fill {
+      height: 100%; background: linear-gradient(90deg, var(--green), #5effa0);
+      border-radius: 3px; transition: width 0.5s ease, background 0.4s;
     }
+    .track-fill.warn { background: linear-gradient(90deg, var(--amber), #ffda9e); }
+    .track-fill.low  { background: linear-gradient(90deg, var(--red), #ff9e9e); }
+    .track-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
 
-    .card:focus-within {
-      border-color: var(--border-hover);
+    .neu-right { text-align: right; }
+    .neu-imgs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+    .neu-imgs-count {
+      font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500;
+      color: var(--accent); line-height: 1; margin-top: 2px;
     }
+    .neu-imgs-note { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
-    .prompt-area {
-      position: relative;
+    /* Model selector */
+    .model-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 1rem; align-items: stretch; }
+    .model-select-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; transition: border-color 0.2s;
     }
-
-    textarea {
-      width: 100%;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      font-size: 16px;
-      font-weight: 300;
-      line-height: 1.65;
-      padding: 1.25rem 1.5rem 1rem;
-      resize: none;
-      min-height: 120px;
-      caret-color: var(--accent);
-    }
-
-    textarea::placeholder {
-      color: var(--muted);
-      font-style: italic;
-    }
-
-    .prompt-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.25rem;
-      border-top: 1px solid var(--border);
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .prompt-chips {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 100px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-weight: 400;
-      white-space: nowrap;
-    }
-
-    .chip:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--accent-dim);
-    }
-
-    .char-count {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    /* ── Controls row ── */
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 1rem;
-    }
-
-    @media (max-width: 500px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-    }
-
-    .ctrl {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-    }
-
-    .ctrl label {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-
-    .ctrl select,
-    .ctrl input[type="range"] {
-      width: 100%;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      font-size: 14px;
-      font-weight: 400;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .ctrl select {
+    .model-select-wrap:focus-within { border-color: var(--border-hover); }
+    .model-select-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+    .model-select {
+      background: transparent; border: none; outline: none;
+      color: var(--text); font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; appearance: none; -webkit-appearance: none; width: 100%;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0 center;
-      padding-right: 18px;
+      background-repeat: no-repeat; background-position: right 0 center; padding-right: 18px;
     }
+    .model-select option { background: #1a1a24; color: var(--text); }
+    .model-select optgroup { color: var(--muted); }
 
-    .ctrl select option {
-      background: #1a1a24;
-      color: var(--text);
+    .model-pill {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 16px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px;
+      min-width: 110px;
     }
+    .pill-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+    .pill-imgs { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--accent); line-height: 1; }
+    .pill-cost { font-size: 10px; color: var(--muted); margin-top: 1px; }
 
-    .steps-val {
-      font-family: 'DM Mono', monospace;
-      font-size: 18px;
-      font-weight: 500;
-      color: var(--accent);
+    /* Prompt card */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 1rem; transition: border-color 0.2s;
     }
+    .card:focus-within { border-color: var(--border-hover); }
+    textarea {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
+      line-height: 1.65; padding: 1.25rem 1.5rem 1rem; resize: none; min-height: 120px; caret-color: var(--accent);
+    }
+    textarea::placeholder { color: var(--muted); font-style: italic; }
+    .prompt-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); gap: 12px; flex-wrap: wrap;
+    }
+    .prompt-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      font-size: 11px; padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; transition: all 0.15s; font-weight: 400; white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .char-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
 
+    /* Neg prompt */
+    .neg-toggle {
+      font-size: 12px; color: var(--muted); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-bottom: 8px; transition: color 0.15s; user-select: none;
+    }
+    .neg-toggle:hover { color: var(--text); }
+    .neg-toggle svg { transition: transform 0.2s; }
+    .neg-toggle.open svg { transform: rotate(90deg); }
+    #neg-area { display: none; margin-bottom: 1rem; }
+    #neg-area textarea { min-height: 60px; font-size: 14px; padding: 0.75rem 1.25rem; }
+
+    /* Controls */
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    @media (max-width: 500px) { .controls { grid-template-columns: 1fr 1fr; } }
+    .ctrl { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+    .ctrl label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 500; }
+    .ctrl select {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px;
+      cursor: pointer; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0 center; padding-right: 18px;
+    }
+    .ctrl select option { background: #1a1a24; color: var(--text); }
+    .steps-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--accent); }
+    .guidance-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--blue); }
     input[type="range"] {
-      -webkit-appearance: none;
-      height: 3px;
-      border-radius: 2px;
-      background: var(--border-hover);
-      outline: none;
-      margin-top: 8px;
+      -webkit-appearance: none; width: 100%; height: 3px; border-radius: 2px;
+      background: var(--border-hover); outline: none; margin-top: 8px;
     }
-
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      border: 3px solid var(--bg);
-      box-shadow: 0 0 0 1px var(--accent);
+      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); cursor: pointer; border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent);
+    }
+    input[type="number"] {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px;
     }
 
-    /* ── Generate button ── */
+    /* Cost pill */
+    .cost-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .cost-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-dim); border: 1px solid rgba(200,184,255,0.15);
+      border-radius: 100px; padding: 5px 13px; font-size: 12px; color: var(--accent);
+      font-family: 'DM Mono', monospace;
+    }
+    .cost-note { font-size: 12px; color: var(--muted); }
+
+    /* Button */
     .btn-generate {
-      width: 100%;
-      padding: 16px;
-      background: var(--accent);
-      color: #0a0a0f;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-family: 'Outfit', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 1.5rem;
-      position: relative;
-      overflow: hidden;
+      width: 100%; padding: 16px; background: var(--accent); color: #0a0a0f; border: none;
+      border-radius: var(--radius-sm); font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600;
+      letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-bottom: 1.5rem; position: relative; overflow: hidden;
     }
-
     .btn-generate::after {
-      content: '';
-      position: absolute;
-      inset: 0;
+      content: ''; position: absolute; inset: 0;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
       transform: translateX(-100%);
     }
-
-    .btn-generate:not(:disabled):hover {
-      background: #d6caff;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 32px var(--accent-glow);
-    }
-
-    .btn-generate:not(:disabled):hover::after {
-      transform: translateX(100%);
-      transition: transform 0.5s ease;
-    }
-
-    .btn-generate:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
+    .btn-generate:not(:disabled):hover { background: #d6caff; transform: translateY(-1px); box-shadow: 0 8px 32px var(--accent-glow); }
+    .btn-generate:not(:disabled):hover::after { transform: translateX(100%); transition: transform 0.5s ease; }
+    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(0,0,0,0.2);
-      border-top-color: #0a0a0f;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: none;
+      width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #0a0a0f;
+      border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Status ── */
-    #status {
-      font-size: 13px;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 1rem;
-      font-family: 'DM Mono', monospace;
-      min-height: 18px;
-      transition: color 0.2s;
-    }
-
+    /* Status */
+    #status { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 1rem; font-family: 'DM Mono', monospace; min-height: 18px; transition: color 0.2s; }
     #status.error { color: var(--red); }
 
-    /* ── Result ── */
-    #result-wrap {
-      display: none;
-      animation: fadeUp 0.4s ease;
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .result-img-wrap {
-      position: relative;
-      background: var(--surface2);
-    }
-
-    #result-img {
-      width: 100%;
-      display: block;
-      border-radius: 0;
-    }
-
-    .result-meta {
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid var(--border);
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .result-prompt-text {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.5;
-      flex: 1;
-      font-style: italic;
-    }
-
+    /* Result */
+    #result-wrap { display: none; animation: fadeUp 0.4s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    #result-img { width: 100%; display: block; background: var(--surface2); }
+    .result-meta { padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); gap: 1rem; flex-wrap: wrap; }
+    .result-prompt-text { font-size: 13px; color: var(--muted); line-height: 1.5; font-style: italic; }
+    .result-model-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); opacity: 0.7; margin-top: 3px; }
     .btn-dl {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border: 1px solid var(--border-hover);
-      border-radius: 100px;
-      font-size: 13px;
-      font-family: 'Outfit', sans-serif;
-      color: var(--text);
-      text-decoration: none;
-      transition: all 0.15s;
-      white-space: nowrap;
-      cursor: pointer;
-      background: transparent;
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      border: 1px solid var(--border-hover); border-radius: 100px; font-size: 13px;
+      font-family: 'Outfit', sans-serif; color: var(--text); text-decoration: none;
+      transition: all 0.15s; white-space: nowrap; cursor: pointer; background: transparent;
     }
+    .btn-dl:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-    .btn-dl:hover {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    /* History */
+    #history-wrap { margin-top: 2rem; display: none; }
+    .history-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
+    .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+    .hist-thumb { aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; background: var(--surface2); }
+    .hist-thumb:hover { border-color: var(--accent); transform: scale(1.03); }
+    .hist-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* ── History strip ── */
-    #history-wrap {
-      margin-top: 2rem;
-      display: none;
-    }
-
-    .history-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .history-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 8px;
-    }
-
-    .hist-thumb {
-      aspect-ratio: 1;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      transition: all 0.15s;
-      background: var(--surface2);
-    }
-
-    .hist-thumb:hover {
-      border-color: var(--accent);
-      transform: scale(1.03);
-    }
-
-    .hist-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* ── Footer ── */
-    footer {
-      margin-top: 3rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: var(--muted);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .footer-link {
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
+    /* Footer */
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); flex-wrap: wrap; gap: 8px; }
+    .footer-link { color: var(--muted); text-decoration: none; transition: color 0.15s; }
     .footer-link:hover { color: var(--text); }
   </style>
 </head>
@@ -510,17 +268,73 @@
       <div class="logo-word">FLUX</div>
       <div class="logo-sub">AI Image Studio</div>
     </div>
-    <div class="header-badge">
-      <div class="dot"></div>
-      Workers AI · Live
-    </div>
+    <div class="header-badge"><div class="dot"></div>Workers AI · Live</div>
   </header>
 
-  <!-- Prompt -->
-  <div class="card prompt-area">
+  <!-- ── NEURON TRACKER ── -->
+  <div class="neuron-bar">
+    <div class="neu-left">
+      <div class="neu-title">Neurons Remaining Today</div>
+      <div class="neu-numbers">
+        <span class="neu-remaining" id="neu-remaining">10,000</span>
+        <span class="neu-of">/ 10,000</span>
+      </div>
+      <div class="neu-reset" id="neu-reset">Resets in …</div>
+    </div>
+
+    <div class="neu-mid">
+      <div class="track-bar">
+        <div class="track-fill" id="track-fill" style="width:100%"></div>
+      </div>
+      <div class="track-meta">
+        <span id="track-used">0 used</span>
+        <span id="track-pct">100% free</span>
+      </div>
+    </div>
+
+    <div class="neu-right">
+      <div class="neu-imgs-label">Images left today</div>
+      <div class="neu-imgs-count" id="neu-imgs">—</div>
+      <div class="neu-imgs-note" id="neu-imgs-note">with selected model</div>
+    </div>
+  </div>
+
+  <!-- ── MODEL SELECTOR ── -->
+  <div class="model-row">
+    <div class="model-select-wrap">
+      <div class="model-select-label">Model</div>
+      <select class="model-select" id="model-select" onchange="onModelChange()">
+        <optgroup label="⚡ FLUX — Black Forest Labs">
+          <option value="@cf/black-forest-labs/flux-1-schnell">FLUX.1 Schnell — fastest, recommended</option>
+          <option value="@cf/black-forest-labs/flux-2-klein-4b">FLUX.2 Klein 4B — ultra-fast gen + editing</option>
+          <option value="@cf/black-forest-labs/flux-2-klein-9b">FLUX.2 Klein 9B — enhanced quality + speed</option>
+          <option value="@cf/black-forest-labs/flux-2-dev">FLUX.2 Dev — ultra-realistic, multi-reference</option>
+        </optgroup>
+        <optgroup label="🎨 Stable Diffusion">
+          <option value="@cf/bytedance/stable-diffusion-xl-lightning">SDXL Lightning — 2–4 steps, 1024px fast</option>
+          <option value="@cf/stabilityai/stable-diffusion-xl-base-1.0">SDXL Base 1.0 — high quality, 20 steps</option>
+          <option value="@cf/runwayml/stable-diffusion-v1-5-inpainting">Stable Diffusion v1.5 — classic, reliable</option>
+        </optgroup>
+        <optgroup label="✨ Leonardo.Ai (Partner)">
+          <option value="@cf/leonardo/phoenix-1.0">Leonardo Phoenix — best prompt adherence</option>
+          <option value="@cf/leonardo/lucid-origin">Leonardo Lucid Origin — photorealistic</option>
+        </optgroup>
+        <optgroup label="🖌️ Artistic">
+          <option value="@cf/lykon/dreamshaper-8-lcm">Dreamshaper 8 LCM — stylized art</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="model-pill">
+      <div class="pill-label">~imgs/day free</div>
+      <div class="pill-imgs" id="model-imgs-day">—</div>
+      <div class="pill-cost" id="model-cost-hint">—</div>
+    </div>
+  </div>
+
+  <!-- ── PROMPT ── -->
+  <div class="card">
     <textarea id="prompt" rows="4"
-      placeholder="a hyperrealistic astronaut floating above a neon Tokyo skyline, cinematic lighting, 8k…"
-    ></textarea>
+      placeholder="a hyperrealistic astronaut floating above a neon Tokyo skyline, cinematic lighting, 8k…"></textarea>
     <div class="prompt-footer">
       <div class="prompt-chips">
         <span class="chip" onclick="appendChip('cinematic lighting')">cinematic lighting</span>
@@ -528,8 +342,23 @@
         <span class="chip" onclick="appendChip('golden hour')">golden hour</span>
         <span class="chip" onclick="appendChip('photorealistic')">photorealistic</span>
         <span class="chip" onclick="appendChip('anime style')">anime style</span>
+        <span class="chip" onclick="appendChip('oil painting')">oil painting</span>
+        <span class="chip" onclick="appendChip('dramatic shadows')">dramatic shadows</span>
       </div>
       <div class="char-count" id="char-count">0</div>
+    </div>
+  </div>
+
+  <!-- Neg prompt -->
+  <div style="margin-bottom:1rem;">
+    <span class="neg-toggle" id="neg-toggle" onclick="toggleNeg()">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 1l4 4-4 4"/></svg>
+      Negative prompt (optional)
+    </span>
+    <div id="neg-area">
+      <div class="card">
+        <textarea id="neg-prompt" rows="2" placeholder="blurry, low quality, watermark, deformed, ugly…"></textarea>
+      </div>
     </div>
   </div>
 
@@ -537,45 +366,56 @@
   <div class="controls">
     <div class="ctrl">
       <label>Aspect ratio</label>
-      <select id="size">
+      <select id="size" onchange="recalc()">
         <option value="1024x1024">1:1 Square</option>
         <option value="1344x768">16:9 Wide</option>
         <option value="768x1344">9:16 Portrait</option>
         <option value="1152x896">4:3 Standard</option>
+        <option value="896x1152">3:4 Portrait</option>
       </select>
     </div>
     <div class="ctrl">
       <label>Steps — <span class="steps-val" id="steps-val">4</span></label>
       <input type="range" id="steps" min="1" max="8" value="4" step="1"
-             oninput="document.getElementById('steps-val').textContent=this.value" />
+             oninput="document.getElementById('steps-val').textContent=this.value; recalc()" />
     </div>
-    <div class="ctrl" style="display:flex;flex-direction:column;justify-content:center;">
-      <label>Model</label>
-      <div style="font-size:13px;color:var(--text);font-weight:400;">flux-1-schnell</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Black Forest Labs</div>
+    <div class="ctrl" id="ctrl-guidance">
+      <label>Guidance — <span class="guidance-val" id="guidance-val">7</span></label>
+      <input type="range" id="guidance" min="1" max="15" value="7" step="0.5"
+             oninput="document.getElementById('guidance-val').textContent=this.value" />
+    </div>
+  </div>
+  <div style="margin-bottom:1rem;">
+    <div class="ctrl" style="display:flex;align-items:center;gap:14px;">
+      <label style="margin:0;white-space:nowrap;">Seed (optional)</label>
+      <input type="number" id="seed" placeholder="random" min="0" max="4294967295" style="flex:1;" />
     </div>
   </div>
 
-  <!-- Button -->
+  <!-- Cost estimate -->
+  <div class="cost-row">
+    <div class="cost-pill" id="cost-pill">⚡ — neurons / image</div>
+    <span class="cost-note" id="cost-note"></span>
+  </div>
+
+  <!-- Generate button -->
   <button class="btn-generate" id="btn" onclick="generate()">
     <div class="spinner" id="spinner"></div>
     <span id="btn-label">Generate image</span>
   </button>
-
   <div id="status"></div>
 
   <!-- Result -->
   <div id="result-wrap">
     <div class="result-card">
-      <div class="result-img-wrap">
-        <img id="result-img" alt="Generated image" />
-      </div>
+      <img id="result-img" alt="Generated image" />
       <div class="result-meta">
-        <div class="result-prompt-text" id="result-prompt"></div>
+        <div>
+          <div class="result-prompt-text" id="result-prompt"></div>
+          <div class="result-model-tag" id="result-model-tag"></div>
+        </div>
         <a class="btn-dl" id="dl-btn" download="flux-image.jpg">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M12 5v14M5 12l7 7 7-7"/>
-          </svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           Download
         </a>
       </div>
@@ -592,91 +432,260 @@
     <span>Powered by <a class="footer-link" href="https://developers.cloudflare.com/workers-ai/" target="_blank">Cloudflare Workers AI</a></span>
     <span style="font-family:'DM Mono',monospace;">flux.shreevathsa2k27.workers.dev</span>
   </footer>
-
 </div>
 
 <script>
   const WORKER_URL = "https://flux.shreevathsa2k27.workers.dev/";
+  const DAILY_FREE = 10000;
 
-  const promptEl   = document.getElementById("prompt");
-  const charCount  = document.getElementById("char-count");
-  const btn        = document.getElementById("btn");
-  const btnLabel   = document.getElementById("btn-label");
-  const spinner    = document.getElementById("spinner");
-  const statusEl   = document.getElementById("status");
-  const resultWrap = document.getElementById("result-wrap");
-  const resultImg  = document.getElementById("result-img");
-  const resultPrompt = document.getElementById("result-prompt");
-  const dlBtn      = document.getElementById("dl-btn");
-  const historyWrap = document.getElementById("history-wrap");
-  const historyGrid = document.getElementById("history-grid");
+  // ── Model configs with neuron cost formulas ──
+  // Source: developers.cloudflare.com/workers-ai/platform/pricing/
+  const MODELS = {
+    "@cf/black-forest-labs/flux-1-schnell": {
+      name: "FLUX.1 Schnell", maxSteps: 8, defaultSteps: 4,
+      supportsGuidance: false, supportsNeg: false,
+      // Official: 4.80 neurons/512px tile + 9.60 neurons/step/tile
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*4.8 + t*s*9.6); },
+    },
+    "@cf/black-forest-labs/flux-2-klein-4b": {
+      name: "FLUX.2 Klein 4B", maxSteps: 8, defaultSteps: 4,
+      supportsGuidance: false, supportsNeg: false,
+      // Partner model, estimated ~6 neu/tile + 10/step/tile
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*6 + t*s*10); },
+    },
+    "@cf/black-forest-labs/flux-2-klein-9b": {
+      name: "FLUX.2 Klein 9B", maxSteps: 8, defaultSteps: 4,
+      supportsGuidance: false, supportsNeg: false,
+      // Larger 9B model, estimated ~10 neu/tile + 15/step/tile
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*10 + t*s*15); },
+    },
+    "@cf/black-forest-labs/flux-2-dev": {
+      name: "FLUX.2 Dev", maxSteps: 28, defaultSteps: 20,
+      supportsGuidance: true, supportsNeg: false,
+      // Official: 18.75 input + 37.50 output neurons per tile per step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*s*(18.75+37.50)); },
+    },
+    "@cf/bytedance/stable-diffusion-xl-lightning": {
+      name: "SDXL Lightning", maxSteps: 8, defaultSteps: 4,
+      supportsGuidance: true, supportsNeg: true,
+      // Fast model category, estimated ~100 neu/tile + 20/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*100 + s*20); },
+    },
+    "@cf/stabilityai/stable-diffusion-xl-base-1.0": {
+      name: "SDXL Base 1.0", maxSteps: 20, defaultSteps: 20,
+      supportsGuidance: true, supportsNeg: true,
+      // Standard model, ~120 neu/tile + 25/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*120 + s*25); },
+    },
+    "@cf/runwayml/stable-diffusion-v1-5-inpainting": {
+      name: "Stable Diffusion v1.5", maxSteps: 20, defaultSteps: 20,
+      supportsGuidance: true, supportsNeg: true,
+      // SD v1.5 is cheaper, ~80 neu/tile + 20/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*80 + s*20); },
+    },
+    "@cf/leonardo/phoenix-1.0": {
+      name: "Leonardo Phoenix", maxSteps: 30, defaultSteps: 25,
+      supportsGuidance: true, supportsNeg: true,
+      // Official: 530 neurons/512px tile + 10 neurons/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*530 + s*10); },
+    },
+    "@cf/leonardo/lucid-origin": {
+      name: "Leonardo Lucid Origin", maxSteps: 30, defaultSteps: 25,
+      supportsGuidance: true, supportsNeg: true,
+      // Official: 636 neurons/512px tile + 12 neurons/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*636 + s*12); },
+    },
+    "@cf/lykon/dreamshaper-8-lcm": {
+      name: "Dreamshaper 8 LCM", maxSteps: 8, defaultSteps: 4,
+      supportsGuidance: true, supportsNeg: true,
+      // Similar to SD v1.5, ~80 neu/tile + 18/step
+      calcNeurons(w, h, s) { const t = tiles(w,h); return Math.round(t*80 + s*18); },
+    },
+  };
 
-  const history = [];
+  // CF pricing: max(w,h) determines side, then count 512×512 tiles
+  function tiles(w, h) {
+    const side = Math.max(w, h);
+    return Math.ceil(side / 512) * Math.ceil(side / 512);
+  }
 
-  promptEl.addEventListener("input", () => {
-    charCount.textContent = promptEl.value.length;
-  });
+  // ── Neuron tracking (localStorage, resets at UTC midnight) ──
+  function todayKey() {
+    const d = new Date();
+    return `cf_neurons_${d.getUTCFullYear()}_${d.getUTCMonth()}_${d.getUTCDate()}`;
+  }
+  function getUsed()      { return parseInt(localStorage.getItem(todayKey()) || "0"); }
+  function getRemaining() { return Math.max(0, DAILY_FREE - getUsed()); }
+  function spendNeurons(n) {
+    const k = todayKey();
+    localStorage.setItem(k, (parseInt(localStorage.getItem(k)||"0") + n));
+    refreshBar();
+  }
 
+  function refreshBar() {
+    const remaining = getRemaining();
+    const used = getUsed();
+    const pct = Math.round((remaining / DAILY_FREE) * 100);
+
+    // Numbers
+    document.getElementById('neu-remaining').textContent = remaining.toLocaleString();
+    document.getElementById('track-used').textContent = used.toLocaleString() + ' used';
+    document.getElementById('track-pct').textContent = pct + '% free';
+
+    // Color class
+    const remEl = document.getElementById('neu-remaining');
+    const fillEl = document.getElementById('track-fill');
+    const cls = pct <= 15 ? 'low' : pct <= 40 ? 'warn' : '';
+    remEl.className = 'neu-remaining' + (cls ? ' ' + cls : '');
+    fillEl.className = 'track-fill' + (cls ? ' ' + cls : '');
+    fillEl.style.width = pct + '%';
+
+    // Images remaining with current settings
+    const cost = calcCurrentCost();
+    const imgsLeft = cost > 0 ? Math.floor(remaining / cost) : '∞';
+    document.getElementById('neu-imgs').textContent = cost > 0 ? '~' + imgsLeft : '∞';
+
+    // Reset countdown
+    const now = new Date();
+    const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+    const ms = reset - now;
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+    document.getElementById('neu-reset').textContent = `Resets in ${h}h ${m}m (00:00 UTC)`;
+  }
+
+  // ── Helpers ──
+  function getModelId() { return document.getElementById('model-select').value; }
+  function getSizeWH()  { return document.getElementById('size').value.split('x').map(Number); }
+  function getSteps()   { return parseInt(document.getElementById('steps').value); }
+
+  function calcCurrentCost() {
+    const m = MODELS[getModelId()];
+    if (!m) return 0;
+    const [w, h] = getSizeWH();
+    return m.calcNeurons(w, h, getSteps());
+  }
+
+  function recalc() {
+    const cost = calcCurrentCost();
+    const [w, h] = getSizeWH();
+    const steps = getSteps();
+
+    document.getElementById('cost-pill').textContent = `⚡ ~${cost.toLocaleString()} neurons / image`;
+    document.getElementById('cost-note').textContent = `at ${w}×${h}, ${steps} step${steps!==1?'s':''}`;
+
+    // Update images remaining in neuron bar
+    const remaining = getRemaining();
+    const imgsLeft = cost > 0 ? Math.floor(remaining / cost) : '∞';
+    document.getElementById('neu-imgs').textContent = cost > 0 ? '~' + imgsLeft : '∞';
+  }
+
+  function onModelChange() {
+    const id = getModelId();
+    const m = MODELS[id];
+    if (!m) return;
+
+    // Adjust steps slider
+    const stepsEl = document.getElementById('steps');
+    stepsEl.max = m.maxSteps;
+    stepsEl.value = m.defaultSteps;
+    document.getElementById('steps-val').textContent = m.defaultSteps;
+
+    // Guidance opacity
+    const gc = document.getElementById('ctrl-guidance');
+    gc.style.opacity = m.supportsGuidance ? '1' : '0.35';
+    gc.style.pointerEvents = m.supportsGuidance ? 'auto' : 'none';
+
+    // Neg prompt
+    const nt = document.getElementById('neg-toggle');
+    nt.style.opacity = m.supportsNeg ? '1' : '0.35';
+    nt.style.pointerEvents = m.supportsNeg ? 'auto' : 'none';
+    if (!m.supportsNeg) {
+      document.getElementById('neg-area').style.display = 'none';
+      nt.classList.remove('open');
+    }
+
+    // Model pill: images per day at default settings
+    const [w, h] = getSizeWH();
+    const defaultCost = m.calcNeurons(w, h, m.defaultSteps);
+    const imgsPerDay = defaultCost > 0 ? Math.floor(DAILY_FREE / defaultCost) : '∞';
+    document.getElementById('model-imgs-day').textContent = '~' + imgsPerDay;
+    document.getElementById('model-cost-hint').textContent = `~${defaultCost.toLocaleString()} neurons/img`;
+
+    recalc();
+    refreshBar();
+  }
+
+  function toggleNeg() {
+    const m = MODELS[getModelId()];
+    if (!m || !m.supportsNeg) return;
+    const area = document.getElementById('neg-area');
+    const t = document.getElementById('neg-toggle');
+    const open = area.style.display === 'block';
+    area.style.display = open ? 'none' : 'block';
+    t.classList.toggle('open', !open);
+  }
+
+  // Prompt helpers
+  const promptEl = document.getElementById("prompt");
+  promptEl.addEventListener("input", () => { document.getElementById("char-count").textContent = promptEl.value.length; });
   function appendChip(text) {
     const cur = promptEl.value.trim();
     promptEl.value = cur ? cur + ", " + text : text;
-    charCount.textContent = promptEl.value.length;
+    document.getElementById("char-count").textContent = promptEl.value.length;
     promptEl.focus();
   }
 
-  function setLoading(on) {
-    btn.disabled = on;
-    spinner.style.display = on ? "block" : "none";
-    btnLabel.textContent = on ? "Generating…" : "Generate image";
-  }
-
-  function setStatus(msg, isError) {
-    statusEl.textContent = msg;
-    statusEl.className = isError ? "error" : "";
-  }
-
+  // Generate
   async function generate() {
     const prompt = promptEl.value.trim();
-    if (!prompt) {
-      setStatus("Please enter a prompt first.", true);
-      promptEl.focus();
-      return;
-    }
+    if (!prompt) { setStatus("Please enter a prompt first.", true); promptEl.focus(); return; }
 
-    const sizeVal = document.getElementById("size").value;
-    const [width, height] = sizeVal.split("x").map(Number);
-    const steps = parseInt(document.getElementById("steps").value);
+    const modelId = getModelId();
+    const m = MODELS[modelId];
+    const [width, height] = getSizeWH();
+    const steps = getSteps();
+    const guidance = m.supportsGuidance ? parseFloat(document.getElementById("guidance").value) : undefined;
+    const negPrompt = m.supportsNeg ? document.getElementById("neg-prompt").value.trim() : undefined;
+    const seedRaw = document.getElementById("seed").value;
+    const seed = seedRaw ? parseInt(seedRaw) : undefined;
+    const cost = calcCurrentCost();
 
     setLoading(true);
-    setStatus("Sending to Workers AI… (10–25 sec)");
-    resultWrap.style.display = "none";
+    setStatus("Sending to Workers AI… (10–30s)");
+    document.getElementById("result-wrap").style.display = "none";
+
+    const body = { prompt, model: modelId, width, height, steps };
+    if (guidance !== undefined) body.guidance = guidance;
+    if (negPrompt) body.negative_prompt = negPrompt;
+    if (seed !== undefined) body.seed = seed;
 
     try {
       const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, width, height, steps }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
-
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Worker error ${res.status}: ${errText}`);
+        const txt = await res.text();
+        let p; try { p = JSON.parse(txt); } catch {}
+        throw new Error(p?.error || `Worker error ${res.status}: ${txt}`);
       }
-
       const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
 
-      resultImg.src = url;
+      document.getElementById("result-img").src = url;
+      const dlBtn = document.getElementById("dl-btn");
       dlBtn.href = url;
-      resultPrompt.textContent = `"${prompt}"`;
-      resultWrap.style.display = "block";
+      dlBtn.download = `${m.name.replace(/\s+/g,'-').toLowerCase()}-${Date.now()}.jpg`;
+      document.getElementById("result-prompt").textContent = `"${prompt}"`;
+      document.getElementById("result-model-tag").textContent = modelId;
+      document.getElementById("result-wrap").style.display = "block";
 
-      // Add to history
-      history.unshift({ url, prompt });
-      if (history.length > 8) history.pop();
+      spendNeurons(cost); // deduct from tracker
+
+      history.unshift({ url, prompt, modelName: m.name, modelId });
+      if (history.length > 10) history.pop();
       renderHistory();
 
-      setStatus("Done! " + width + "×" + height + " · " + steps + " steps");
+      setStatus(`Done! ${width}×${height} · ${steps} steps · ${cost.toLocaleString()} neurons used`);
     } catch (err) {
       setStatus(err.message, true);
     } finally {
@@ -684,29 +693,42 @@
     }
   }
 
-  function renderHistory() {
-    if (history.length < 2) return;
-    historyWrap.style.display = "block";
-    historyGrid.innerHTML = history.map((h, i) =>
-      `<div class="hist-thumb" onclick="loadHistory(${i})" title="${h.prompt}">
-         <img src="${h.url}" alt="history ${i}" loading="lazy" />
-       </div>`
-    ).join("");
+  function setLoading(on) {
+    document.getElementById("btn").disabled = on;
+    document.getElementById("spinner").style.display = on ? "block" : "none";
+    document.getElementById("btn-label").textContent = on ? "Generating…" : "Generate image";
+  }
+  function setStatus(msg, isError) {
+    const el = document.getElementById("status");
+    el.textContent = msg; el.className = isError ? "error" : "";
   }
 
+  const history = [];
+  function renderHistory() {
+    const wrap = document.getElementById("history-wrap");
+    if (history.length < 2) return;
+    wrap.style.display = "block";
+    document.getElementById("history-grid").innerHTML = history.map((h,i) =>
+      `<div class="hist-thumb" onclick="loadHistory(${i})" title="${h.prompt}">
+         <img src="${h.url}" loading="lazy" />
+       </div>`).join("");
+  }
   function loadHistory(i) {
     const h = history[i];
-    resultImg.src = h.url;
-    dlBtn.href = h.url;
-    resultPrompt.textContent = `"${h.prompt}"`;
-    resultWrap.style.display = "block";
+    document.getElementById("result-img").src = h.url;
+    document.getElementById("dl-btn").href = h.url;
+    document.getElementById("result-prompt").textContent = `"${h.prompt}"`;
+    document.getElementById("result-model-tag").textContent = h.modelId;
+    document.getElementById("result-wrap").style.display = "block";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Enter key submits
-  promptEl.addEventListener("keydown", e => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) generate();
-  });
+  promptEl.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) generate(); });
+
+  // Init
+  onModelChange();
+  refreshBar();
+  setInterval(refreshBar, 60000); // refresh countdown every minute
 </script>
 </body>
 </html>
