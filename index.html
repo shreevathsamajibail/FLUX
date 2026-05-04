@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Historian Engine — FLUX Edition</title>
+<title>Historian Engine — PIN Archive</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,1310 +11,451 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:       #0c0c0f;
-  --surface:  #111116;
-  --surface2: #18181f;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.13);
-  --text:     #f0f0f5;
-  --text2:    #7a7a90;
-  --text3:    #4a4a60;
-  --accent:   #c8ff00;
-  --red:      #ff4f4f;
-  --red-dim:  rgba(255,79,79,0.12);
-  --green:    #3dffa0;
-  --green-dim:rgba(61,255,160,0.1);
-  --amber:    #ffb347;
-  --amber-dim:rgba(255,179,71,0.1);
-  --radius:   18px;
-  --radius-sm:10px;
-  --shadow:   0 2px 12px rgba(0,0,0,0.5);
-  --shadow-lg:0 8px 40px rgba(0,0,0,0.7);
-  --font:     'Syne', sans-serif;
-  --mono:     'DM Mono', monospace;
-  --nav-w:    80px;
+  --bg: #0c0c0f; --surface: #111116; --surface2: #18181f; --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13); --text: #f0f0f5; --text2: #7a7a90; --text3: #4a4a60;
+  --accent: #c8ff00; --red: #ff4f4f; --red-dim: rgba(255,79,79,0.12); --green: #3dffa0;
+  --green-dim:rgba(61,255,160,0.1); --amber: #ffb347; --radius: 18px; --radius-sm:10px;
+  --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace; --nav-w: 80px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
 
-/* ─── AUTH SCREEN ─── */
-#auth-screen{
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  z-index:1000;
-}
-.auth-wrap{width:100%;max-width:420px;padding:16px}
+/* AUTH SCREEN */
+#auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:28px;padding:44px 48px;width:100%;max-width:400px;text-align:center;box-shadow:0 10px 50px rgba(0,0,0,0.7)}
+.auth-logo-icon{width:50px;height:50px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#000}
+.auth-mode-switch{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:28px}
+.auth-mode-btn{flex:1;padding:10px;border:none;background:none;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border-radius:9px}
+.auth-mode-btn.active{background:var(--surface);color:var(--text)}
+.pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px}
+.pin-digit{background:var(--surface2);border:1px solid var(--border);border-radius:12px;height:64px;font-size:28px;font-weight:800;text-align:center;color:var(--text);font-family:var(--mono);outline:none;width:100%}
+.pin-digit.filled{border-color:var(--accent);color:var(--accent)}
+.pin-status{font-size:10px;font-family:var(--mono);height:20px;margin-bottom:10px}
+.auth-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:12px;padding:16px;font-weight:800;text-transform:uppercase;cursor:pointer;transition:0.2s}
+.auth-btn:disabled{opacity:0.4;cursor:not-allowed}
+.auth-err{margin-top:15px;background:var(--red-dim);color:var(--red);padding:10px;border-radius:10px;font-size:11px;display:none}
 
-.auth-card{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:28px;padding:44px 48px;
-  box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
-}
-.auth-card::before{
-  content:'';position:absolute;top:-80px;right:-80px;
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(200,255,0,0.06) 0%,transparent 70%);
-  border-radius:50%;pointer-events:none;
-}
-
-.auth-logo{display:flex;align-items:center;gap:14px;margin-bottom:32px}
-.auth-logo-icon{
-  width:46px;height:46px;background:var(--accent);
-  border-radius:13px;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-.auth-logo-icon svg{color:#000}
-.auth-logo-name{font-size:20px;font-weight:800;letter-spacing:-.4px}
-.auth-logo-sub{font-size:9px;color:var(--text2);font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
-
-/* greeting line */
-.auth-greeting{
-  margin-bottom:28px;
-  padding:14px 16px;
-  background:rgba(200,255,0,0.05);
-  border:1px solid rgba(200,255,0,0.12);
-  border-radius:12px;
-  display:flex;align-items:center;gap:12px;
-}
-.auth-greeting-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:rgba(200,255,0,0.15);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:800;color:var(--accent);flex-shrink:0;
-}
-.auth-greeting-text{font-size:13px;font-weight:600}
-.auth-greeting-sub{font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px}
-
-/* mode switcher (register / login) */
-.auth-mode-switch{
-  display:flex;gap:4px;background:var(--surface2);
-  border-radius:12px;padding:4px;margin-bottom:28px;
-}
-.auth-mode-btn{
-  flex:1;padding:9px;border:none;background:none;
-  color:var(--text3);font-family:var(--font);font-size:11px;
-  font-weight:700;text-transform:uppercase;letter-spacing:.1em;
-  border-radius:9px;cursor:pointer;transition:all .2s;
-}
-.auth-mode-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.5)}
-
-/* field */
-.auth-field{margin-bottom:18px}
-.auth-label{
-  display:block;font-size:8px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.18em;
-  color:var(--text3);margin-bottom:7px;font-family:var(--mono);
-}
-.auth-input{
-  width:100%;background:var(--surface2);
-  border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:12px 15px;font-family:var(--font);font-size:14px;color:var(--text);
-  outline:none;transition:border-color .2s;
-}
-.auth-input:focus{border-color:rgba(200,255,0,0.5)}
-
-/* PIN grid */
-.pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.pin-digit{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;height:64px;font-size:28px;font-weight:800;
-  text-align:center;color:var(--text);font-family:var(--mono);
-  outline:none;transition:border-color .2s,background .2s;width:100%;
-}
-.pin-digit:focus{border-color:rgba(200,255,0,0.5);background:rgba(200,255,0,0.03)}
-.pin-digit.filled{border-color:rgba(200,255,0,0.35);color:var(--accent)}
-
-/* pin availability indicator */
-.pin-status{
-  margin-top:8px;font-size:10px;font-family:var(--mono);
-  height:16px;transition:opacity .2s;
-}
-.pin-status.ok   {color:var(--green)}
-.pin-status.taken{color:var(--red)}
-.pin-status.check{color:var(--text3);animation:pulse 1s ease-in-out infinite}
-
-/* submit button */
-.auth-btn{
-  width:100%;background:var(--accent);color:#000;
-  border:none;border-radius:var(--radius-sm);padding:15px;
-  font-family:var(--font);font-size:12px;font-weight:800;
-  text-transform:uppercase;letter-spacing:.1em;
-  cursor:pointer;transition:all .2s;margin-top:6px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.auth-btn:hover:not(:disabled){background:#d4ff1a;transform:translateY(-1px)}
-.auth-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
-
-/* error */
-.auth-err{
-  margin-top:12px;background:var(--red-dim);
-  border:1px solid rgba(255,79,79,.2);border-radius:10px;
-  padding:10px 14px;font-size:11px;color:var(--red);
-  font-family:var(--mono);display:none;line-height:1.5;
-}
-
-/* not-you link */
-.not-you{
-  margin-top:16px;text-align:center;font-size:10px;
-  color:var(--text3);font-family:var(--mono);cursor:pointer;
-  transition:color .2s;
-}
-.not-you:hover{color:var(--text2);text-decoration:underline}
-
-/* hint */
-.auth-hint{margin-top:14px;text-align:center;font-size:9px;color:var(--text3);font-family:var(--mono);line-height:1.7}
-
-/* ─── MAIN APP ─── */
+/* MAIN APP */
 #app{display:none;width:100%}
-
-.nav{
-  width:var(--nav-w);min-width:var(--nav-w);
-  background:var(--surface);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;align-items:center;
-  padding:20px 0;gap:4px;
-  position:fixed;top:0;left:0;height:100vh;z-index:50;
-}
-.nav-logo{
-  width:42px;height:42px;background:var(--accent);
-  border-radius:12px;display:flex;align-items:center;justify-content:center;
-  margin-bottom:20px;flex-shrink:0;
-}
-.nav-logo svg{color:#000}
-.nav-item{
-  width:60px;display:flex;flex-direction:column;
-  align-items:center;gap:5px;padding:10px 6px;
-  border-radius:12px;cursor:pointer;transition:all .15s;
-  border:none;background:none;color:var(--text3);
-}
-.nav-item:hover{background:var(--surface2);color:var(--text2)}
+.nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;position:fixed;height:100vh}
+.nav-item{width:60px;margin-bottom:10px;padding:12px 0;border-radius:12px;cursor:pointer;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:5px;border:none;background:none}
 .nav-item.active{background:rgba(200,255,0,0.1);color:var(--accent)}
-.nav-item svg{width:18px;height:18px}
-.nav-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
-.nav-bottom{
-  margin-top:auto;display:flex;flex-direction:column;
-  align-items:center;gap:8px;padding-top:12px;
-  border-top:1px solid var(--border);width:100%;
-}
-.nav-user{
-  width:38px;height:38px;background:var(--surface2);
-  border:1px solid var(--border);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;
-  font-size:14px;font-weight:800;color:var(--accent);
-  position:relative;
-}
-.nav-user:hover{border-color:var(--accent)}
-.nav-user-tip{
-  position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:8px;padding:6px 12px;
-  font-size:10px;font-family:var(--mono);white-space:nowrap;
-  pointer-events:none;opacity:0;transition:opacity .2s;color:var(--text2);
-}
-.nav-user:hover .nav-user-tip{opacity:1}
+.nav-label{font-size:8px;font-weight:700;text-transform:uppercase;font-family:var(--mono)}
+main{margin-left:var(--nav-w);flex:1;padding:24px 30px;max-width:1300px}
 
-main{margin-left:var(--nav-w);flex:1;padding:24px 28px 80px;max-width:1280px}
+.topbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.sync-pill{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;border:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--text2)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
+.sync-dot.synced{background:var(--green);box-shadow:0 0 8px var(--green)}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:0.3}}
 
-/* topbar */
-.topbar{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px 22px;
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:24px;box-shadow:var(--shadow);
-}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.topbar-icon{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
-.topbar-icon svg{color:#000}
-.topbar-title{font-size:18px;font-weight:800;letter-spacing:-.4px}
-.topbar-sub{font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;color:var(--text2);margin-top:2px}
-.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-
-.sync-pill{
-  display:flex;align-items:center;gap:7px;padding:7px 14px;
-  border-radius:100px;border:1px solid var(--border);
-  font-size:9px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.1em;font-family:var(--mono);color:var(--text2);
-}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
-.sync-dot.syncing{background:var(--amber);animation:pulse 1.2s ease-in-out infinite}
-.sync-dot.synced {background:var(--green)}
-
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes spin  {to{transform:rotate(360deg)}}
-
-/* buttons */
-.btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:9px 18px;border-radius:100px;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.08em;
-  cursor:pointer;border:none;transition:all .15s;white-space:nowrap;font-family:var(--font);
-}
-.btn-primary{background:var(--accent);color:#000}
-.btn-primary:hover:not(:disabled){background:#d4ff1a;transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.3;cursor:not-allowed}
-.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
-.btn-outline:hover{background:var(--surface2);color:var(--text)}
-.btn-danger {background:var(--red-dim);color:var(--red);border:1px solid rgba(255,79,79,.2)}
-.btn-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,255,160,.2)}
-.btn-sm{padding:6px 12px;font-size:10px}
-.btn svg{width:12px;height:12px}
-
-/* tabs */
 .tab-panel{display:none}
 .tab-panel.active{display:block}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;height:fit-content}
+.lbl{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono)}
+input, select, textarea {width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);outline:none;font-family:var(--font);margin-bottom:15px}
+.btn{padding:12px 20px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#000}
+.btn-danger{background:var(--red-dim);color:var(--red)}
 
-/* gen grid */
-.gen-grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
-@media(max-width:900px){.gen-grid{grid-template-columns:1fr}}
+/* FEED */
+.feed{display:flex;flex-direction:column;gap:15px}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:240px 1fr}
+.result-img{background:var(--surface2);display:flex;align-items:center;justify-content:center;min-height:280px}
+.result-img img{max-width:100%;height:auto}
+.result-info{padding:20px;display:flex;flex-direction:column;gap:10px}
+.badge{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:800;text-transform:uppercase;font-family:var(--mono)}
+.badge-done{background:var(--green-dim);color:var(--green)}
+.badge-pending{background:var(--surface2);color:var(--text3)}
+.long-text{font-size:12px;color:var(--text2);line-height:1.6;max-height:150px;overflow-y:auto;border-left:2px solid var(--border);padding-left:15px}
 
-/* card */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
-.card-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--text3);margin-bottom:18px;font-family:var(--mono)}
+/* GUILDS LIST */
+.guild-item{display:flex;align-items:center;gap:15px;padding:12px;background:var(--surface2);border-radius:12px;margin-bottom:10px}
+.guild-logo-prev{width:40px;height:40px;background:var(--surface);border-radius:8px;overflow:hidden}
+.guild-logo-prev img{width:100%;height:100%;object-fit:cover}
 
-/* form */
-label.lbl{display:block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:6px;font-family:var(--mono)}
-input[type="text"],input[type="password"],input[type="url"],select,textarea{
-  width:100%;background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:11px 14px;
-  font-family:var(--font);font-size:13px;color:var(--text);
-  outline:none;transition:border-color .15s;
-}
-input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4)}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4a60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-.field{margin-bottom:16px}
-
-/* upload zone */
-.upload-zone{
-  border:1.5px dashed var(--border2);border-radius:var(--radius);
-  padding:24px;display:flex;flex-direction:column;align-items:center;
-  gap:10px;cursor:pointer;transition:all .15s;text-align:center;background:var(--surface2);
-}
-.upload-zone:hover{border-color:var(--accent);background:rgba(200,255,0,.03)}
-.upload-zone-icon{width:40px;height:40px;background:var(--surface);border-radius:10px;display:flex;align-items:center;justify-content:center}
-.upload-zone-icon svg{color:var(--text3)}
-.upload-badge{background:var(--accent);color:#000;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;padding:4px 10px;border-radius:100px;font-family:var(--mono)}
-
-/* toggle */
-.toggle-row{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)}
-.toggle{width:42px;height:22px;border-radius:100px;background:var(--border2);border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-.toggle.on{background:var(--accent)}
-.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:left .2s}
-.toggle.on::after{left:23px}
-.toggle-title{font-size:12px;font-weight:600}
-.toggle-sub{font-size:10px;color:var(--text2);margin-top:2px;font-family:var(--mono)}
-
-.action-row{display:flex;gap:8px;margin-top:4px}
-
-/* feed */
-.feed{max-height:82vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:2px;padding-bottom:40px}
-.feed::-webkit-scrollbar{width:3px}
-.feed::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s}
-.result-card:hover{box-shadow:var(--shadow-lg);border-color:var(--border2)}
-.result-inner{display:grid;grid-template-columns:220px 1fr}
-@media(max-width:700px){.result-inner{grid-template-columns:1fr}}
-
-.result-img-col{background:var(--surface2);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:260px;padding:14px}
-.result-img-col img{max-width:100%;border-radius:8px;box-shadow:var(--shadow)}
-.result-img-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.2}
-.result-img-placeholder svg{width:28px;height:28px}
-.result-content{padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
-.result-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:12px}
-.result-guild{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.result-guild img{width:16px;height:16px;border-radius:50%}
-.result-guild-name{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);font-family:var(--mono)}
-.result-topic{font-size:13px;font-weight:700;letter-spacing:-.2px}
-
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;font-family:var(--mono)}
-.badge-done{background:rgba(200,255,0,.1);color:var(--accent);border:1px solid rgba(200,255,0,.2)}
-.badge-done::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);display:block}
-.badge-processing{background:var(--surface2);border:1px solid var(--border);color:var(--text2);animation:pulse 1.5s ease-in-out infinite}
-.badge-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,79,79,.2)}
-.badge-pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
-
-.overlay-box{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px}
-.overlay-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
-.overlay-text{font-size:11px;font-weight:600;line-height:1.5}
-.long-text-box{border-left:2px solid var(--border2);padding-left:12px;max-height:180px;overflow-y:auto}
-.long-text-box p{font-size:11px;line-height:1.7;color:var(--text2)}
-.long-text-box::-webkit-scrollbar{width:2px}
-.long-text-box::-webkit-scrollbar-thumb{background:var(--border)}
-.error-box{background:var(--red-dim);border:1px solid rgba(255,79,79,.15);border-radius:10px;padding:12px;display:flex;gap:8px}
-.error-box svg{color:var(--red);width:14px;height:14px;flex-shrink:0;margin-top:1px}
-.error-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--red);font-family:var(--mono)}
-.error-msg{font-size:10px;color:var(--red);font-family:var(--mono);margin-top:3px;line-height:1.5}
-.empty-feed{border:1.5px dashed var(--border);border-radius:var(--radius);height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:.25;color:var(--text2);font-size:13px;font-weight:600}
-.empty-feed svg{width:36px;height:36px}
-
-/* guilds */
-.profiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:700px){.profiles-grid{grid-template-columns:1fr}}
-.logo-picker{width:100px;height:100px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .15s}
-.logo-picker:hover{border-color:var(--accent)}
-.logo-picker img{width:100%;height:100%;object-fit:contain}
-.logo-picker svg{color:var(--text3)}
-.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);transition:all .15s}
-.guild-card:hover{border-color:var(--border2)}
-.guild-logo{width:50px;height:50px;background:var(--surface2);border-radius:10px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.guild-logo img{width:100%;height:100%;object-fit:contain}
-.guild-info{flex:1;min-width:0}
-.guild-name{font-size:13px;font-weight:700}
-.guild-id{font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px}
-.guild-del{background:none;border:none;cursor:pointer;padding:7px;border-radius:8px;color:var(--text3);opacity:0;transition:all .15s}
-.guild-card:hover .guild-del{opacity:1}
-.guild-del:hover{background:var(--red-dim);color:var(--red)}
-
-/* workers */
-.wm-wrap{max-width:680px}
-.wm-active-bar{padding:14px 18px;background:var(--green-dim);border:1px solid rgba(61,255,160,.15);border-radius:14px;margin-bottom:20px}
-.wm-active-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.15em;color:var(--green);font-weight:700;margin-bottom:4px;font-family:var(--mono)}
-.wm-active-url{font-family:var(--mono);font-size:12px;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wm-active-meta{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px}
-.wm-url-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:8px;border:1px solid var(--border);background:var(--surface);transition:border-color .2s}
-.wm-url-row.is-active{border-color:rgba(61,255,160,.3);background:var(--green-dim)}
-.wm-url-row.is-exhausted{border-color:rgba(255,79,79,.2);background:var(--red-dim);opacity:.7}
-.wm-url-row.is-idle:hover{border-color:var(--border2);cursor:pointer}
-.wm-badge{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.wm-badge.green{background:var(--green);box-shadow:0 0 7px rgba(61,255,160,.5);animation:pulse 2s ease-in-out infinite}
-.wm-badge.amber{background:var(--amber)}
-.wm-badge.red  {background:var(--red)}
-.wm-badge.grey {background:var(--text3)}
-.wm-info{flex:1;min-width:0}
-.wm-url-text{font-family:var(--mono);font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wm-url-tag{font-size:9px;margin-top:2px;font-family:var(--mono)}
-.wm-url-tag.green{color:var(--green)}
-.wm-url-tag.amber{color:var(--amber)}
-.wm-url-tag.red  {color:var(--red)}
-.wm-url-tag.grey {color:var(--text3)}
-.wm-del{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 7px;border-radius:6px;color:var(--text3);transition:all .15s}
-.wm-del:hover{color:var(--red);background:var(--red-dim)}
-.wm-boxes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-.wm-box{width:24px;height:24px;border-radius:6px;border:1px solid transparent;position:relative;cursor:default;transition:transform .15s}
-.wm-box:hover{transform:scale(1.2);z-index:2}
-.wm-box.green{background:rgba(61,255,160,.15);border-color:rgba(61,255,160,.3)}
-.wm-box.amber{background:rgba(255,179,71,.15);border-color:rgba(255,179,71,.3)}
-.wm-box.red  {background:rgba(255,79,79,.12);border-color:rgba(255,79,79,.2)}
-.wm-box.grey {background:var(--surface2);border-color:var(--border)}
-.wm-box.idle-click{cursor:pointer}
-.wm-box-tip{position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:9px;color:var(--text);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10}
-.wm-box:hover .wm-box-tip{opacity:1}
-.wm-legend{display:flex;gap:12px;flex-wrap:wrap}
-.wm-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3);font-family:var(--mono)}
-.wm-leg-dot{width:7px;height:7px;border-radius:2px}
-.wm-leg-dot.amber{background:rgba(255,179,71,.6)}
-.wm-leg-dot.green{background:rgba(61,255,160,.6)}
-.wm-leg-dot.red  {background:rgba(255,79,79,.5)}
-.wm-leg-dot.grey {background:var(--text3)}
-.flux-model-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-
-/* vault */
-.settings-wrap{max-width:680px}
-.key-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)}
-.key-indicator{display:flex;align-items:center;gap:10px}
-.key-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(61,255,160,.4)}
-.key-text{font-family:var(--mono);font-size:12px;color:var(--text2)}
-.key-del{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text3);transition:all .15s}
-.key-del:hover{background:var(--red-dim);color:var(--red)}
-.key-empty{border:1.5px dashed var(--border);border-radius:14px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:.3;color:var(--text2);font-size:13px;font-weight:600}
-.key-empty svg{width:24px;height:24px}
-
-/* misc */
-.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
-.section-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:var(--text3);margin-bottom:12px;font-family:var(--mono)}
-.gap-list{display:flex;flex-direction:column;gap:8px}
-.hint-box{display:flex;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--mono)}
-.hint-box svg{color:var(--text3);width:13px;height:13px;flex-shrink:0;margin-top:1px}
-.add-row{display:flex;gap:8px}
-
-.spinner{width:16px;height:16px;border:2px solid rgba(200,255,0,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-.spinner.sm{width:10px;height:10px;border-width:1.5px}
-.spinner.dark{border-color:rgba(0,0,0,.15);border-top-color:#000}
-
-/* toast */
-.notif{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);
-  background:var(--surface);color:var(--text);border:1px solid var(--border2);
-  border-radius:12px;padding:12px 20px;font-size:12px;font-weight:600;
-  z-index:9998;opacity:0;pointer-events:none;transition:all .3s;
-  display:flex;align-items:center;gap:8px;white-space:nowrap;max-width:90vw;
-  font-family:var(--mono);box-shadow:var(--shadow-lg);
-}
-.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.notif.success{background:var(--green-dim);color:var(--green);border-color:rgba(61,255,160,.2)}
-.notif.error  {background:var(--red-dim);color:var(--red);border-color:rgba(255,79,79,.2)}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,0.1);border-top-color:#000;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     AUTH SCREEN
-══════════════════════════════════════ -->
+<!-- AUTH SCREEN -->
 <div id="auth-screen">
-  <div class="auth-wrap">
-    <div class="auth-card">
+  <div class="auth-card">
+    <div class="auth-logo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <h2 style="margin-bottom:5px">Historian Engine</h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:25px">CHRONICLE ARCHIVE</p>
 
-      <div class="auth-logo">
-        <div class="auth-logo-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-        </div>
-        <div>
-          <div class="auth-logo-name">Historian Engine</div>
-          <div class="auth-logo-sub">Chronicle · FLUX Edition</div>
-        </div>
-      </div>
-
-      <!-- Greeting shown when username is known -->
-      <div class="auth-greeting" id="auth-greeting" style="display:none">
-        <div class="auth-greeting-avatar" id="auth-avatar">?</div>
-        <div>
-          <div class="auth-greeting-text" id="auth-greeting-name">Welcome back</div>
-          <div class="auth-greeting-sub">Enter your PIN to continue</div>
-        </div>
-      </div>
-
-      <!-- Mode switcher (only shown when username NOT yet known) -->
-      <div class="auth-mode-switch" id="auth-mode-switch">
-        <button class="auth-mode-btn active" onclick="setMode('login')">Login</button>
-        <button class="auth-mode-btn" onclick="setMode('register')">Register</button>
-      </div>
-
-      <!-- Username field (only shown when username NOT yet known) -->
-      <div class="auth-field" id="username-field">
-        <label class="auth-label">Username</label>
-        <input class="auth-input" id="inp-username" type="text" placeholder="your_username" autocomplete="username" spellcheck="false"/>
-      </div>
-
-      <!-- PIN row (always shown) -->
-      <div class="auth-field">
-        <label class="auth-label" id="pin-label">4-Digit PIN</label>
-        <div class="pin-row">
-          <input class="pin-digit" id="p0" type="password" inputmode="numeric" maxlength="1"/>
-          <input class="pin-digit" id="p1" type="password" inputmode="numeric" maxlength="1"/>
-          <input class="pin-digit" id="p2" type="password" inputmode="numeric" maxlength="1"/>
-          <input class="pin-digit" id="p3" type="password" inputmode="numeric" maxlength="1"/>
-        </div>
-        <div class="pin-status" id="pin-status"></div>
-      </div>
-
-      <button class="auth-btn" id="auth-submit-btn" onclick="submitAuth()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        <span id="auth-btn-label">Enter Archive</span>
-      </button>
-
-      <div class="auth-err" id="auth-err"></div>
-
-      <!-- "Not you?" shown when username IS known -->
-      <div class="not-you" id="not-you-link" style="display:none" onclick="forgetUsername()">
-        Not <span id="not-you-name"></span>? Switch account
-      </div>
-
-      <div class="auth-hint" id="auth-hint">Your data is stored permanently in the cloud.<br/>Login from any device using your PIN.</div>
+    <div class="auth-mode-switch">
+      <button class="auth-mode-btn active" id="m-login" onclick="setMode('login')">Login</button>
+      <button class="auth-mode-btn" id="m-reg" onclick="setMode('register')">Register</button>
     </div>
+
+    <div class="pin-row">
+      <input class="pin-digit" id="p0" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p1" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p2" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p3" type="password" maxlength="1" inputmode="numeric"/>
+    </div>
+    <div class="pin-status" id="pin-status"></div>
+
+    <button class="auth-btn" id="auth-btn" onclick="submitAuth()">Enter Archive</button>
+    <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     MAIN APP
-══════════════════════════════════════ -->
+<!-- MAIN APP -->
 <div id="app">
   <nav class="nav">
-    <div class="nav-logo">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-    </div>
-    <button class="nav-item active" data-tab="generate" onclick="switchTab('generate',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    <div class="nav-item active" onclick="switchTab('build', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
       <span class="nav-label">Build</span>
-    </button>
-    <button class="nav-item" data-tab="profiles" onclick="switchTab('profiles',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>
+    </div>
+    <div class="nav-item" onclick="switchTab('guilds', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span class="nav-label">Guilds</span>
-    </button>
-    <button class="nav-item" data-tab="workers" onclick="switchTab('workers',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    </div>
+    <div class="nav-item" onclick="switchTab('workers', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <span class="nav-label">Workers</span>
-    </button>
-    <button class="nav-item" data-tab="vault" onclick="switchTab('vault',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+    </div>
+    <div class="nav-item" onclick="switchTab('vault', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <span class="nav-label">Vault</span>
-    </button>
-    <div class="nav-bottom">
-      <div class="nav-user" id="nav-user-btn" onclick="logout()">
-        <span id="nav-user-initial">?</span>
-        <div class="nav-user-tip" id="nav-user-tip">Logout</div>
-      </div>
+    </div>
+    <div style="margin-top:auto">
+        <button class="nav-item" onclick="location.reload()" style="color:var(--red);opacity:0.6">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
     </div>
   </nav>
 
   <main>
     <div class="topbar">
-      <div class="topbar-left">
-        <div class="topbar-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-        </div>
-        <div>
-          <div class="topbar-title">Historian Engine</div>
-          <div class="topbar-sub">Chronicle Automation · FLUX Edition</div>
-        </div>
+      <div>
+          <div style="font-weight:800; font-size:18px">Historian Engine</div>
+          <div style="font-size:9px; color:var(--text2); font-family:var(--mono)">FLUX EDITION</div>
       </div>
-      <div class="topbar-right">
-        <div class="sync-pill">
+      <div class="sync-pill">
           <div class="sync-dot" id="sync-dot"></div>
-          <span id="sync-label">Cloud Ready</span>
-        </div>
-        <button class="btn btn-outline btn-sm" id="folder-btn" onclick="connectFolder()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-          <span id="folder-label">PC Folder</span>
-        </button>
-        <button class="btn btn-primary btn-sm" id="export-btn" style="display:none" onclick="exportAll()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Batch
-        </button>
+          <span id="sync-label">Cloud Connected</span>
       </div>
     </div>
 
     <!-- BUILD TAB -->
-    <div class="tab-panel active" id="tab-generate">
-      <div class="gen-grid">
-        <div class="card" style="height:fit-content">
-          <div class="card-title">Batch Configuration</div>
-          <div class="field">
-            <label class="lbl">Target Guild</label>
-            <select id="sel-profile"><option value="">Select a Page Guild...</option></select>
-          </div>
-          <div class="field">
-            <div class="upload-zone" onclick="document.getElementById('csv-input').click()">
-              <div class="upload-zone-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              </div>
-              <div>
-                <div style="font-size:12px;font-weight:700">Import Manifest</div>
-                <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">CSV or XLSX</div>
-              </div>
-              <div id="csv-badge" style="display:none" class="upload-badge">0 Subjects</div>
+    <div id="tab-build" class="tab-panel active">
+        <div class="grid">
+            <div class="card">
+                <label class="lbl">Page Guild</label>
+                <select id="sel-profile"><option value="">Select Guild...</option></select>
+                
+                <label class="lbl">Topic Manifest (CSV/XLSX)</label>
+                <input type="file" id="csv-input" accept=".csv,.xlsx" onchange="importTopics(this)"/>
+                
+                <button class="btn btn-primary" style="width:100%" onclick="processBatch()" id="process-btn" disabled>Process Batch</button>
+                <br/><br/>
+                <button class="btn btn-outline" style="width:100%" onclick="exportAll()">Export All (.zip)</button>
             </div>
-            <input id="csv-input" type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSV(this)"/>
-          </div>
-          <div class="field">
-            <div class="toggle-row">
-              <button class="toggle" id="random-toggle" onclick="toggleRandom()"></button>
-              <div class="toggle-info">
-                <div class="toggle-title">Random Subject</div>
-                <div class="toggle-sub">Pick one random topic</div>
-              </div>
+            <div class="feed" id="feed">
+                <div style="text-align:center; padding:100px; color:var(--text3); border:2px dashed var(--border); border-radius:20px">
+                    Ready to forge history...
+                </div>
             </div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="process-btn" onclick="processBatch()" style="flex:1" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Process Batch
-            </button>
-            <button class="btn btn-danger btn-sm" id="stop-btn" style="display:none" onclick="stopProcessing()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-            </button>
-            <button class="btn btn-success btn-sm" id="resume-btn" style="display:none" onclick="resumePending()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            </button>
-            <button class="btn btn-outline btn-sm" id="clear-btn" style="display:none" onclick="clearResults()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-            </button>
-          </div>
-          <div id="no-key-warn" style="display:none;margin-top:10px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">⚠ Add a Gemini API key in the Vault tab</div>
-          <div id="no-worker-warn" style="display:none;margin-top:6px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">⚠ No active FLUX Worker — check Workers tab</div>
         </div>
-        <div>
-          <div class="feed" id="feed">
-            <div class="empty-feed" id="empty-feed">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-              Waiting for history to be written…
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- GUILDS TAB -->
-    <div class="tab-panel" id="tab-profiles">
-      <div class="profiles-grid">
-        <div class="card">
-          <div class="card-title">Forge Guild</div>
-          <div class="field"><label class="lbl">Guild Alias</label><input type="text" id="new-profile-name" placeholder="e.g. Ancient Architect"/></div>
-          <div class="field">
-            <label class="lbl">Identity Sigil</label>
-            <div class="logo-picker" onclick="document.getElementById('logo-input').click()">
-              <img id="logo-preview" style="display:none"/>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="logo-placeholder"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div id="tab-guilds" class="tab-panel">
+        <div class="grid">
+            <div class="card">
+                <label class="lbl">Guild Name</label>
+                <input type="text" id="g-name" placeholder="Ancient Rome"/>
+                <label class="lbl">Identity Sigil (Logo)</label>
+                <input type="file" id="g-logo" accept="image/*"/>
+                <button class="btn btn-primary" style="width:100%" onclick="addGuild()">Register Guild</button>
             </div>
-            <input id="logo-input" type="file" accept="image/*" style="display:none" onchange="handleLogo(this)"/>
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="addProfile()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Register Guild
-          </button>
+            <div id="guilds-list"></div>
         </div>
-        <div>
-          <div class="section-title">Active Guilds</div>
-          <div class="gap-list" id="guilds-list"><div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive.</div></div>
-        </div>
-      </div>
     </div>
 
     <!-- WORKERS TAB -->
-    <div class="tab-panel" id="tab-workers">
-      <div class="wm-wrap">
-        <div class="card">
-          <div class="card-title">FLUX Worker Manager</div>
-          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">Add multiple Cloudflare Worker URLs. When one is exhausted, the engine auto-switches to the next.</p>
-          <div class="wm-active-bar">
-            <div class="wm-active-lbl">Active Worker</div>
-            <div class="wm-active-url" id="wm-active-url">—</div>
-            <div class="wm-active-meta" id="wm-active-meta"></div>
-          </div>
-          <div class="section-title">Image Generation Settings</div>
-          <div class="flux-model-row">
-            <div>
-              <label class="lbl">FLUX Model</label>
-              <select id="flux-model" onchange="scheduleSync()">
-                <option value="@cf/black-forest-labs/flux-1-schnell">FLUX.1 Schnell — fastest</option>
-                <option value="@cf/black-forest-labs/flux-2-klein-4b">FLUX.2 Klein 4B</option>
-                <option value="@cf/black-forest-labs/flux-2-klein-9b">FLUX.2 Klein 9B</option>
-                <option value="@cf/black-forest-labs/flux-2-dev">FLUX.2 Dev — quality</option>
-                <option value="@cf/bytedance/stable-diffusion-xl-lightning">SDXL Lightning</option>
-                <option value="@cf/stabilityai/stable-diffusion-xl-base-1.0">SDXL Base 1.0</option>
-              </select>
-            </div>
-            <div>
-              <label class="lbl">Steps — <span id="flux-steps-val">4</span></label>
-              <input type="range" min="1" max="8" value="4" step="1" id="flux-steps"
-                oninput="document.getElementById('flux-steps-val').textContent=this.value;scheduleSync()"
-                style="width:100%;margin-top:10px;accent-color:var(--accent)"/>
-            </div>
-          </div>
-          <hr class="divider" style="margin:14px 0"/>
-          <div class="section-title">Worker URLs</div>
-          <div id="wm-list" class="gap-list" style="margin-bottom:14px"></div>
-          <label class="lbl">Add New Worker URL</label>
-          <div class="add-row">
-            <input type="url" id="wm-inp" placeholder="https://flux.yourname.workers.dev/"/>
-            <button class="btn btn-primary" onclick="wmAdd()" style="white-space:nowrap">+ Add</button>
-          </div>
-          <div style="margin-top:22px">
-            <div class="section-title">Status</div>
-            <div class="wm-boxes" id="wm-boxes"></div>
-            <div class="wm-legend">
-              <div class="wm-leg"><div class="wm-leg-dot amber"></div>In Use</div>
-              <div class="wm-leg"><div class="wm-leg-dot green"></div>Available</div>
-              <div class="wm-leg"><div class="wm-leg-dot red"></div>Exhausted</div>
-            </div>
-          </div>
+    <div id="tab-workers" class="tab-panel">
+        <div class="card" style="max-width:600px">
+            <label class="lbl">Cloudflare Worker URL</label>
+            <input type="url" id="w-url" placeholder="https://flux-gen.yourname.workers.dev/"/>
+            <button class="btn btn-primary" onclick="addWorker()">Add Worker</button>
+            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0"/>
+            <div id="workers-list"></div>
         </div>
-      </div>
     </div>
 
     <!-- VAULT TAB -->
-    <div class="tab-panel" id="tab-vault">
-      <div class="settings-wrap">
-        <div class="card">
-          <div class="card-title">Gemini API Vault</div>
-          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">Gemini keys are stored in your personal cloud profile. They sync across all your devices when you login with your PIN.</p>
-          <div class="add-row" style="margin-bottom:16px">
-            <input type="password" id="new-key-input" placeholder="AIza..."/>
-            <button class="btn btn-primary" onclick="addKey()" style="white-space:nowrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-          </div>
-          <div class="gap-list" id="keys-list">
-            <div class="key-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Vault is empty</div>
-          </div>
-          <hr class="divider"/>
-          <div class="section-title">Notes</div>
-          <div class="gap-list">
-            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>Keys rotate automatically to balance quotas.</div>
-            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>Data syncs to GitHub Releases — login from any browser with your PIN.</div>
-          </div>
+    <div id="tab-vault" class="tab-panel">
+        <div class="card" style="max-width:600px">
+            <label class="lbl">Gemini API Key</label>
+            <div style="display:flex; gap:10px">
+                <input type="password" id="v-key" placeholder="AIza..."/>
+                <button class="btn btn-primary" onclick="addKey()">Add Key</button>
+            </div>
+            <div id="keys-list" style="margin-top:20px"></div>
         </div>
-      </div>
     </div>
-
   </main>
 </div>
 
-<div class="notif" id="notif"></div>
-
 <script>
-// ═══════════════════════════════════════════════════
-//  HARDCODED PROXY URL
-// ═══════════════════════════════════════════════════
+// UPDATE THIS TO YOUR PROXY URL
 const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/';
 
-async function proxyCall(action, body = {}) {
-  const res = await fetch(PROXY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...body })
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-  return data;
-}
+let userData = { apiKeys: [], profiles: [], results: [], workers: [] };
+let authMode = 'login';
+let currentPin = '';
+let topics = [];
 
-// ═══════════════════════════════════════════════════
-//  SESSION — username stored permanently, pin per-session
-// ═══════════════════════════════════════════════════
-// localStorage.historian_username → stays forever
-// sessionStorage.historian_pin   → cleared when browser closed (optional: use localStorage too)
-// We use localStorage for both so PIN auto-fills on reopen
-
-let currentUser = null; // { username, pin }
-
-function getSavedUsername() { return localStorage.getItem('historian_username') || ''; }
-function saveUsername(u)    { localStorage.setItem('historian_username', u); }
-function forgetSavedUsername() { localStorage.removeItem('historian_username'); localStorage.removeItem('historian_pin'); }
-function getSavedPin()     { return localStorage.getItem('historian_pin') || ''; }
-function savePin(p)        { localStorage.setItem('historian_pin', p); }
-
-// ═══════════════════════════════════════════════════
-//  AUTH MODE
-// ═══════════════════════════════════════════════════
-let authMode = 'login'; // 'login' | 'register'
-let knownUsername = ''; // username saved in localStorage
-
-function setMode(mode) {
-  authMode = mode;
-  document.querySelectorAll('.auth-mode-btn').forEach((b,i) => {
-    b.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='register'));
-  });
-  document.getElementById('pin-label').textContent = mode==='register' ? 'Choose a 4-Digit PIN' : '4-Digit PIN';
-  document.getElementById('auth-btn-label').textContent = mode==='register' ? 'Create Account' : 'Enter Archive';
-  document.getElementById('auth-hint').textContent = mode==='register'
-    ? 'Remember your PIN — it must be unique. No recovery!'
-    : 'Your data is stored permanently in the cloud.';
-  clearPinStatus();
-  clearPinBoxes();
-  clearErr();
-}
-
-function clearPinBoxes() { [0,1,2,3].forEach(i=>{ const el=document.getElementById('p'+i); el.value=''; el.classList.remove('filled'); }); }
-function clearPinStatus() { const el=document.getElementById('pin-status'); el.textContent=''; el.className='pin-status'; }
-function clearErr() { const el=document.getElementById('auth-err'); el.style.display='none'; el.textContent=''; }
-function showErr(msg) { const el=document.getElementById('auth-err'); el.textContent=msg; el.style.display='block'; }
+// PIN INPUT LOGIC
+[0,1,2,3].forEach(i => {
+    const el = document.getElementById('p'+i);
+    el.addEventListener('input', () => {
+        if(el.value) el.classList.add('filled');
+        if(el.value && i<3) document.getElementById('p'+(i+1)).focus();
+        if(getPin().length === 4 && authMode === 'register') checkPinAvailability();
+    });
+    el.addEventListener('keydown', e => {
+        if(e.key === 'Backspace' && !el.value && i>0) document.getElementById('p'+(i-1)).focus();
+    });
+});
 
 function getPin() { return [0,1,2,3].map(i=>document.getElementById('p'+i).value).join(''); }
 
-// Setup PIN input UX
-;[0,1,2,3].forEach(i => {
-  const el = document.getElementById('p'+i);
-  el.addEventListener('input', () => {
-    el.classList.toggle('filled', !!el.value);
-    if (el.value && i < 3) document.getElementById('p'+(i+1)).focus();
-    if (getPin().length === 4 && authMode === 'register') checkPinAvailability();
-  });
-  el.addEventListener('keydown', e => {
-    if (e.key==='Backspace' && !el.value && i>0) document.getElementById('p'+(i-1)).focus();
-  });
-});
+function setMode(m) {
+    authMode = m;
+    document.getElementById('m-login').classList.toggle('active', m==='login');
+    document.getElementById('m-reg').classList.toggle('active', m==='register');
+    document.getElementById('auth-btn').textContent = m==='login' ? 'Enter Archive' : 'Create Archive';
+    document.getElementById('pin-status').textContent = '';
+}
 
-let pinCheckTimer = null;
 async function checkPinAvailability() {
-  const pin = getPin();
-  if (pin.length !== 4) return;
-  const statusEl = document.getElementById('pin-status');
-  statusEl.textContent = 'Checking…'; statusEl.className = 'pin-status check';
-  clearTimeout(pinCheckTimer);
-  pinCheckTimer = setTimeout(async () => {
+    const pin = getPin();
+    const st = document.getElementById('pin-status');
+    st.textContent = 'Checking...';
     try {
-      const res = await proxyCall('check_pin', { pin });
-      if (res.available) {
-        statusEl.textContent = '✓ PIN is available'; statusEl.className = 'pin-status ok';
-      } else {
-        statusEl.textContent = '✗ PIN already taken — choose another'; statusEl.className = 'pin-status taken';
-      }
-    } catch { statusEl.textContent = ''; statusEl.className = 'pin-status'; }
-  }, 400);
+        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'check_pin', pin}) }).then(r=>r.json());
+        st.textContent = res.available ? '✓ PIN Available' : '✗ PIN Taken';
+        st.style.color = res.available ? '#3dffa0' : '#ff4f4f';
+    } catch(e) {}
 }
 
-// ═══════════════════════════════════════════════════
-//  SHOW AUTH SCREEN (username-aware)
-// ═══════════════════════════════════════════════════
-function showAuthScreen() {
-  knownUsername = getSavedUsername();
-
-  if (knownUsername) {
-    // Username is saved — hide username field and mode switcher, show greeting
-    document.getElementById('auth-greeting').style.display = 'flex';
-    document.getElementById('auth-mode-switch').style.display = 'none';
-    document.getElementById('username-field').style.display = 'none';
-    document.getElementById('not-you-link').style.display = 'block';
-    document.getElementById('not-you-name').textContent = knownUsername;
-    document.getElementById('auth-avatar').textContent = knownUsername[0].toUpperCase();
-    document.getElementById('auth-greeting-name').textContent = `Welcome back, ${knownUsername}`;
-    document.getElementById('auth-btn-label').textContent = 'Enter Archive';
-    document.getElementById('auth-hint').textContent = 'Staying logged in on this browser.';
-    authMode = 'login';
-
-    // Try auto-fill saved PIN
-    const savedPin = getSavedPin();
-    if (savedPin && savedPin.length === 4) {
-      savedPin.split('').forEach((d, i) => {
-        const el = document.getElementById('p'+i);
-        el.value = d; el.classList.add('filled');
-      });
-      // Auto-login
-      submitAuth();
-    }
-  } else {
-    // No username saved — show full form
-    document.getElementById('auth-greeting').style.display = 'none';
-    document.getElementById('auth-mode-switch').style.display = 'flex';
-    document.getElementById('username-field').style.display = 'block';
-    document.getElementById('not-you-link').style.display = 'none';
-    setMode('login');
-  }
-}
-
-function forgetUsername() {
-  forgetSavedUsername();
-  knownUsername = '';
-  clearPinBoxes();
-  clearPinStatus();
-  clearErr();
-  showAuthScreen();
-}
-
-// ═══════════════════════════════════════════════════
-//  SUBMIT AUTH
-// ═══════════════════════════════════════════════════
 async function submitAuth() {
-  const btn = document.getElementById('auth-submit-btn');
-  clearErr();
-
-  const username = knownUsername || document.getElementById('inp-username').value.trim().toLowerCase();
-  const pin      = getPin();
-
-  if (!username)        { showErr('Enter a username.'); return; }
-  if (pin.length !== 4) { showErr('Enter your 4-digit PIN.'); return; }
-
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner dark sm"></span> ${authMode==='register'?'Creating…':'Entering…'}`;
-
-  try {
-    if (authMode === 'register') {
-      await proxyCall('register', { username, pin });
-    } else {
-      await proxyCall('login', { username, pin });
+    const pin = getPin();
+    if(pin.length < 4) return;
+    const btn = document.getElementById('auth-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    
+    try {
+        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: authMode, pin}) }).then(r=>r.json());
+        if(res.error) throw new Error(res.error);
+        
+        currentPin = pin;
+        await loadData();
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+    } catch(e) {
+        const err = document.getElementById('auth-err');
+        err.textContent = e.message; err.style.display = 'block';
+    } finally {
+        btn.disabled = false; btn.innerHTML = authMode==='login'?'Enter Archive':'Create Archive';
     }
-
-    // Persist
-    saveUsername(username);
-    savePin(pin);
-    currentUser = { username, pin };
-
-    await loadUserData();
-    enterApp();
-
-    if (authMode === 'register') notify(`✓ Welcome, ${username}! Archive created.`, 'success');
-
-  } catch(e) {
-    showErr(e.message || 'Something went wrong.');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span id="auth-btn-label">${authMode==='register'?'Create Account':'Enter Archive'}</span>`;
 }
 
-// ═══════════════════════════════════════════════════
-//  USER DATA
-// ═══════════════════════════════════════════════════
-let userData = {
-  apiKeys: [], profiles: [], results: [],
-  workers: [{ url: 'https://flux.vmajibail.workers.dev/', status: 'active' }],
-  fluxModel: '@cf/black-forest-labs/flux-1-schnell', fluxSteps: 4
-};
-
-let syncTimer = null, isSyncing = false;
-
-function scheduleSync() { clearTimeout(syncTimer); setSyncState('dirty'); syncTimer = setTimeout(syncToCloud, 1800); }
-
-function setSyncState(s) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  if (!dot) return;
-  dot.className = 'sync-dot';
-  if (s==='dirty')   { dot.classList.add('syncing'); lbl.textContent='Unsaved…'; }
-  if (s==='syncing') { dot.classList.add('syncing'); lbl.textContent='Syncing…'; }
-  if (s==='synced')  { dot.classList.add('synced');  lbl.textContent='Cloud Synced'; }
-  if (s==='error')   { lbl.textContent='Sync Error'; }
+async function loadData() {
+    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'load', pin: currentPin}) }).then(r=>r.json());
+    if(res.data) userData = res.data;
+    renderAll();
 }
 
-async function syncToCloud() {
-  if (isSyncing || !currentUser) return;
-  isSyncing = true; setSyncState('syncing');
-  try {
-    const safeResults = userData.results.map(r => ({
-      ...r,
-      compositedImageUrl: r.compositedImageUrl ? '[local]' : '',
-      imageUrl: r.imageUrl ? '[local]' : ''
-    }));
-    await proxyCall('save', { username: currentUser.username, pin: currentUser.pin, data: { ...userData, results: safeResults } });
-    setSyncState('synced');
-  } catch(e) { setSyncState('error'); console.error('Sync:', e); }
-  isSyncing = false;
+async function saveData() {
+    document.getElementById('sync-dot').className = 'sync-dot syncing';
+    try {
+        await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'save', pin: currentPin, data: userData}) });
+        document.getElementById('sync-dot').className = 'sync-dot synced';
+    } catch(e) {}
 }
 
-async function loadUserData() {
-  try {
-    const res = await proxyCall('load', { username: currentUser.username, pin: currentUser.pin });
-    if (res.data) {
-      userData = { ...userData, ...res.data };
-      userData.results = (userData.results||[]).map(r => ({
-        ...r,
-        compositedImageUrl: r.compositedImageUrl==='[local]' ? '' : r.compositedImageUrl,
-        imageUrl: r.imageUrl==='[local]' ? '' : r.imageUrl
-      }));
+// UI LOGIC
+function switchTab(t, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+t).classList.add('active');
+    btn.classList.add('active');
+}
+
+function renderAll() {
+    renderProfiles();
+    renderKeys();
+    renderWorkers();
+    renderFeed();
+}
+
+// PROFILE LOGIC
+async function addGuild() {
+    const name = document.getElementById('g-name').value;
+    const file = document.getElementById('g-logo').files[0];
+    if(!name) return;
+    let logo = '';
+    if(file) {
+        logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
     }
-  } catch(e) { console.warn('Load failed:', e); }
+    userData.profiles.push({ id: Date.now(), name, logo });
+    saveData(); renderProfiles();
 }
 
-function enterApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  const ini = currentUser.username[0].toUpperCase();
-  document.getElementById('nav-user-initial').textContent = ini;
-  document.getElementById('nav-user-tip').textContent = `${currentUser.username} · logout`;
-  if (userData.fluxModel) document.getElementById('flux-model').value = userData.fluxModel;
-  if (userData.fluxSteps) { document.getElementById('flux-steps').value=userData.fluxSteps; document.getElementById('flux-steps-val').textContent=userData.fluxSteps; }
-  renderAll(); setSyncState('synced');
+function renderProfiles() {
+    const sel = document.getElementById('sel-profile');
+    sel.innerHTML = '<option value="">Select Guild...</option>' + userData.profiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    
+    document.getElementById('guilds-list').innerHTML = userData.profiles.map(p => `
+        <div class="guild-item">
+            <div class="guild-logo-prev">${p.logo ? `<img src="${p.logo}"/>` : ''}</div>
+            <div style="flex:1"><b>${p.name}</b></div>
+            <button class="btn-danger btn" onclick="removeGuild(${p.id})">Remove</button>
+        </div>
+    `).join('');
 }
+function removeGuild(id) { userData.profiles = userData.profiles.filter(p=>p.id!==id); saveData(); renderProfiles(); }
 
-function logout() {
-  if (!confirm('Logout? Your data is saved.')) return;
-  // Keep username saved but clear pin so they see PIN screen
-  localStorage.removeItem('historian_pin');
-  currentUser = null;
-  userData = { apiKeys:[], profiles:[], results:[], workers:[{url:'https://flux.vmajibail.workers.dev/',status:'active'}], fluxModel:'@cf/black-forest-labs/flux-1-schnell', fluxSteps:4 };
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  clearPinBoxes(); clearPinStatus(); clearErr();
-  showAuthScreen();
-}
-
-// ═══════════════════════════════════════════════════
-//  NAV
-// ═══════════════════════════════════════════════════
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  btn.classList.add('active');
-  if (name==='workers') renderWorkers();
-  if (name==='generate') renderProfileSelect();
-}
-
-// ═══════════════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════════════
-let notifTimer;
-function notify(msg, type='info') {
-  const el=document.getElementById('notif');
-  el.textContent=msg; el.className=`notif show ${type}`;
-  clearTimeout(notifTimer); notifTimer=setTimeout(()=>el.classList.remove('show'),3500);
-}
-
-// ═══════════════════════════════════════════════════
-//  API KEYS
-// ═══════════════════════════════════════════════════
+// KEY LOGIC
 function addKey() {
-  const inp=document.getElementById('new-key-input');
-  const v=inp.value.trim();
-  if (!v||userData.apiKeys.includes(v)) return;
-  userData.apiKeys.push(v); inp.value='';
-  renderKeys(); updateWarnings(); scheduleSync();
+    const k = document.getElementById('v-key').value;
+    if(k) { userData.apiKeys.push(k); document.getElementById('v-key').value=''; saveData(); renderKeys(); }
 }
-document.getElementById('new-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')addKey()});
-function removeKey(i){userData.apiKeys.splice(i,1);renderKeys();updateWarnings();scheduleSync()}
-function renderKeys(){
-  const el=document.getElementById('keys-list');if(!el)return;
-  if(!userData.apiKeys.length){el.innerHTML=`<div class="key-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Vault is empty</div>`;return;}
-  el.innerHTML=userData.apiKeys.map((k,i)=>`<div class="key-row"><div class="key-indicator"><div class="key-dot"></div><span class="key-text">AIza...${k.slice(-8)}</span></div><button class="key-del" onclick="removeKey(${i})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
+function renderKeys() {
+    document.getElementById('keys-list').innerHTML = userData.apiKeys.map((k, i) => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px; background:var(--surface2); padding:10px; border-radius:8px">
+            <span>AIza...${k.slice(-5)}</span>
+            <button onclick="removeKey(${i})" style="color:var(--red); border:0; background:none; cursor:pointer">Remove</button>
+        </div>
+    `).join('');
 }
+function removeKey(i) { userData.apiKeys.splice(i,1); saveData(); renderKeys(); }
 
-// ═══════════════════════════════════════════════════
-//  WORKERS
-// ═══════════════════════════════════════════════════
-function getWorkers(){return userData.workers||[]}
-function getActiveWorker(){return getWorkers().find(w=>w.status==='active')||null}
-function exhaustActive(){
-  const i=getWorkers().findIndex(w=>w.status==='active');
-  if(i>=0)userData.workers[i].status='exhausted';
-  const ni=getWorkers().findIndex(w=>w.status==='idle');
-  if(ni>=0){userData.workers[ni].status='active';scheduleSync();renderWorkers();return true}
-  scheduleSync();renderWorkers();return false;
+// WORKER LOGIC
+function addWorker() {
+    const u = document.getElementById('w-url').value;
+    if(u) { userData.workers.push(u); document.getElementById('w-url').value=''; saveData(); renderWorkers(); }
 }
+function renderWorkers() {
+    document.getElementById('workers-list').innerHTML = userData.workers.map((w, i) => `
+        <div style="padding:10px; background:var(--surface2); margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between">
+            <span style="font-size:11px">${w}</span>
+            <button onclick="removeWorker(${i})" style="color:var(--red); background:none; border:0; cursor:pointer">✕</button>
+        </div>
+    `).join('');
+}
+function removeWorker(i) { userData.workers.splice(i,1); saveData(); renderWorkers(); }
 
-async function fetchFluxImage(prompt){
-  const model=document.getElementById('flux-model').value;
-  const steps=parseInt(document.getElementById('flux-steps').value);
-  userData.fluxModel=model;userData.fluxSteps=steps;
-  for(let attempt=0;attempt<=getWorkers().length;attempt++){
-    const aw=getActiveWorker();
-    if(!aw) throw new Error('All FLUX Workers exhausted. Add more in Workers tab.');
-    const res=await fetch(aw.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,model,width:1080,height:1080,steps})});
-    if(res.status===429){
-      let d={};try{d=await res.json();}catch{}
-      if(d.error==='DAILY_LIMIT'){const s=exhaustActive();if(!s)throw new Error('All Workers exhausted.');notify('⚡ Worker exhausted — switching…','info');continue;}
-      throw new Error('Rate limited. Try again shortly.');
+// ENGINE LOGIC
+function importTopics(input) {
+    const file = input.files[0];
+    if(!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if(ext === 'csv') {
+        Papa.parse(file, { header: true, complete: (res) => { topics = res.data.map(r => r.Topic || r.topic); updateBtn(); } });
+    } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wb = XLSX.read(e.target.result, { type: 'binary' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            topics = XLSX.utils.sheet_to_json(ws).map(r => r.Topic || r.topic);
+            updateBtn();
+        };
+        reader.readAsBinaryString(file);
     }
-    if(!res.ok){const t=await res.text();let e;try{e=JSON.parse(t);}catch{}throw new Error(e?.error||`Worker error ${res.status}`);}
-    const ct=res.headers.get('content-type')||'';
-    if(!ct.includes('image')){const t=await res.text();let e;try{e=JSON.parse(t);}catch{}throw new Error(e?.error||'Non-image response');}
-    const blob=await res.blob();
-    return await new Promise((resolve,reject)=>{const r=new FileReader();r.onloadend=()=>resolve(r.result.split(',')[1]);r.onerror=reject;r.readAsDataURL(blob);});
-  }
-  throw new Error('Failed after all retries.');
 }
 
-function wmAdd(){
-  let url=document.getElementById('wm-inp').value.trim();if(!url)return;
-  if(!url.startsWith('http'))url='https://'+url;
-  if(!url.endsWith('/'))url+='/';
-  if(getWorkers().some(w=>w.url===url)){notify('Already added','info');return;}
-  const hasActive=getWorkers().some(w=>w.status==='active');
-  userData.workers.push({url,status:hasActive?'idle':'active'});
-  scheduleSync();renderWorkers();document.getElementById('wm-inp').value='';
-  notify('✓ Worker added','success');updateWarnings();
-}
-document.getElementById('wm-inp').addEventListener('keydown',e=>{if(e.key==='Enter')wmAdd()});
-function wmDelete(i){const wa=getWorkers()[i].status==='active';userData.workers.splice(i,1);if(wa){const n=getWorkers().find(w=>w.status!=='exhausted');if(n)n.status='active';}scheduleSync();renderWorkers();updateWarnings();}
-function wmActivate(i){userData.workers.forEach(w=>{if(w.status==='active')w.status='idle';});userData.workers[i].status='active';scheduleSync();renderWorkers();notify(`✓ Switched to worker ${i+1}`,'success');}
+function updateBtn() { document.getElementById('process-btn').disabled = (topics.length === 0 || userData.profiles.length === 0 || userData.apiKeys.length === 0); }
 
-function renderWorkers(){
-  const ws=getWorkers(),aw=getActiveWorker(),avail=ws.filter(w=>w.status!=='exhausted').length;
-  const u=document.getElementById('wm-active-url'),m=document.getElementById('wm-active-meta');
-  if(u)u.textContent=aw?aw.url:'None — add a URL below';
-  if(m)m.textContent=aw?`Worker ${ws.indexOf(aw)+1} of ${ws.length} · ${avail} available`:'';
-  const list=document.getElementById('wm-list');if(!list)return;
-  list.innerHTML=ws.map((w,i)=>{
-    const cls=w.status==='active'?'is-active':w.status==='exhausted'?'is-exhausted':'is-idle';
-    const bc=w.status==='active'?'amber':w.status==='exhausted'?'red':'green';
-    const tag=w.status==='active'?'In use now':w.status==='exhausted'?'Exhausted today':'Available — click to activate';
-    const click=w.status==='idle'?`onclick="wmActivate(${i})"`:'';
-    const del=w.status!=='active'?`<button class="wm-del" onclick="event.stopPropagation();wmDelete(${i})">✕</button>`:'';
-    return `<div class="wm-url-row ${cls}" ${click}><div class="wm-badge ${bc}"></div><div class="wm-info"><div class="wm-url-text">${w.url}</div><div class="wm-url-tag ${bc}">${tag}</div></div>${del}</div>`;
-  }).join('');
-  const boxes=document.getElementById('wm-boxes');if(!boxes)return;
-  boxes.innerHTML=ws.map((w,i)=>{
-    const bc=w.status==='active'?'amber':w.status==='exhausted'?'red':'green';
-    const tip=`#${i+1} · ${w.status} · ${w.url.replace('https://','').slice(0,28)}`;
-    const cc=w.status==='idle'?'idle-click':'';
-    const cl=w.status==='idle'?`onclick="wmActivate(${i})"`:'';
-    return `<div class="wm-box ${bc} ${cc}" ${cl}><span class="wm-box-tip">${tip}</span></div>`;
-  }).join('');
-}
+async function processBatch() {
+    const guildId = document.getElementById('sel-profile').value;
+    const guild = userData.profiles.find(p => p.id == guildId);
+    if(!guild) return;
 
-// ═══════════════════════════════════════════════════
-//  PROFILES
-// ═══════════════════════════════════════════════════
-let pendingLogoUrl=null;
-function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onloadend=async()=>{const o=await resizeImage(r.result,100,100);pendingLogoUrl=o;document.getElementById('logo-preview').src=o;document.getElementById('logo-preview').style.display='block';document.getElementById('logo-placeholder').style.display='none';};r.readAsDataURL(f);}
-function resizeImage(dataUrl,w,h){return new Promise(resolve=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);resolve(c.toDataURL('image/png'));};i.src=dataUrl;});}
-function addProfile(){
-  const name=document.getElementById('new-profile-name').value.trim();
-  if(!name){notify('Enter a guild name.','error');return;}
-  userData.profiles.push({id:Math.random().toString(36).substr(2,9),name,logoUrl:pendingLogoUrl});
-  document.getElementById('new-profile-name').value='';
-  document.getElementById('logo-preview').style.display='none';
-  document.getElementById('logo-placeholder').style.display='block';
-  pendingLogoUrl=null;renderGuilds();renderProfileSelect();scheduleSync();notify('✓ Guild registered!','success');
-}
-function removeProfile(id){userData.profiles=userData.profiles.filter(p=>p.id!==id);renderGuilds();renderProfileSelect();scheduleSync();}
-function renderGuilds(){
-  const el=document.getElementById('guilds-list');if(!el)return;
-  if(!userData.profiles.length){el.innerHTML=`<div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive.</div>`;return;}
-  el.innerHTML=userData.profiles.map(p=>`<div class="guild-card"><div class="guild-logo">${p.logoUrl?`<img src="${p.logoUrl}" alt=""/>`:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>'}</div><div class="guild-info"><div class="guild-name">${p.name}</div><div class="guild-id">UID: ${p.id}</div></div><button class="guild-del" onclick="removeProfile('${p.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
-}
-function renderProfileSelect(){
-  const sel=document.getElementById('sel-profile');if(!sel)return;
-  const cur=sel.value;sel.innerHTML='<option value="">Select a Page Guild...</option>';
-  if(userData.profiles.length){sel.innerHTML+='<option value="ALL">⚡ All active Guilds</option>';userData.profiles.forEach(p=>{sel.innerHTML+=`<option value="${p.id}">${p.name}</option>`;});}
-  sel.value=cur;updateProcessBtn();
+    document.getElementById('process-btn').disabled = true;
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+
+    for(let topic of topics) {
+        if(!topic) continue;
+        const resultId = Date.now();
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.id = 'res-' + resultId;
+        card.innerHTML = `<div class="result-img"><span class="spinner"></span></div><div class="result-info"><b>${topic}</b><span class="badge badge-pending">Processing...</span></div>`;
+        feed.prepend(card);
+
+        try {
+            // 1. Gemini Text
+            const prompt = `Write a viral historical post about ${topic} for "${guild.name}". 1 short punchy caption (max 8 words, wrap 1 word in <yellow>). 1 long detailed story (250 words). Format: JSON { "short": "", "long": "" }`;
+            const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userData.apiKeys[0]}`, {
+                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            }).then(r => r.json());
+            const text = JSON.parse(gemRes.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
+
+            // 2. FLUX Image
+            const imgRes = await fetch(userData.workers[0], {
+                method: 'POST', body: JSON.stringify({ prompt: `Cinematic historical scene of ${topic}, ultra-realistic, 4k` })
+            }).then(r => r.blob());
+            const imgUrl = URL.createObjectURL(imgRes);
+
+            // 3. Update UI
+            card.innerHTML = `
+                <div class="result-img"><img src="${imgUrl}"/></div>
+                <div class="result-info">
+                    <div style="display:flex; justify-content:space-between"><b>${topic}</b><span class="badge badge-done">Done</span></div>
+                    <div style="font-weight:800; color:var(--accent)">${text.short}</div>
+                    <div class="long-text">${text.long}</div>
+                </div>
+            `;
+            userData.results.push({ topic, short: text.short, long: text.long, image: imgUrl, guild: guild.name });
+        } catch(e) {
+            card.innerHTML += `<div style="color:var(--red); font-size:10px">Error: ${e.message}</div>`;
+        }
+    }
+    saveData();
+    document.getElementById('process-btn').disabled = false;
 }
 
-// ═══════════════════════════════════════════════════
-//  CSV
-// ═══════════════════════════════════════════════════
-let csvData=[],pickRandom=false;
-function handleCSV(input){
-  const file=input.files[0];if(!file)return;
-  const ext=file.name.split('.').pop().toLowerCase();
-  if(ext==='xlsx'||ext==='xls'){const r=new FileReader();r.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvData=XLSX.utils.sheet_to_json(ws).map(r=>({topic:r.Topic||r.topic||r[Object.keys(r)[0]]})).filter(t=>t.topic);updateCSVBadge();notify(`Imported ${csvData.length} topics.`,'success');};r.readAsArrayBuffer(file);}
-  else{Papa.parse(file,{header:true,complete:r=>{csvData=r.data.map(row=>({topic:row.Topic||row.topic||row[Object.keys(row)[0]]})).filter(t=>t.topic);updateCSVBadge();notify(`Imported ${csvData.length} topics.`,'success');}});}
-  updateProcessBtn();
-}
-function updateCSVBadge(){const b=document.getElementById('csv-badge');b.textContent=csvData.length+' Subjects';b.style.display=csvData.length>0?'inline-block':'none';updateProcessBtn();}
-function toggleRandom(){pickRandom=!pickRandom;document.getElementById('random-toggle').classList.toggle('on',pickRandom);}
-
-// ═══════════════════════════════════════════════════
-//  UI STATE
-// ═══════════════════════════════════════════════════
-function updateProcessBtn(){
-  const hasKey=userData.apiKeys.length>0,hasCSV=csvData.length>0,hasW=!!getActiveWorker();
-  const btn=document.getElementById('process-btn');if(btn)btn.disabled=!(hasKey&&hasCSV&&hasW);
-  const nk=document.getElementById('no-key-warn'),nw=document.getElementById('no-worker-warn');
-  if(nk)nk.style.display=!hasKey?'block':'none';if(nw)nw.style.display=!hasW?'block':'none';
-}
-function updateWarnings(){updateProcessBtn();}
-let isProcessing=false,stopRequested=false;
-function setProcessing(on){
-  isProcessing=on;
-  const pb=document.getElementById('process-btn'),sb=document.getElementById('stop-btn'),rb=document.getElementById('resume-btn'),cb=document.getElementById('clear-btn'),eb=document.getElementById('export-btn');
-  if(pb)pb.disabled=on;if(sb)sb.style.display=on?'inline-flex':'none';if(rb)rb.style.display='none';
-  if(cb)cb.style.display=userData.results.length>0&&!on?'inline-flex':'none';
-  if(eb)eb.style.display=userData.results.some(r=>r.status==='done')?'inline-flex':'none';
+function renderFeed() {
+    if(userData.results.length === 0) return;
+    const feed = document.getElementById('feed');
+    feed.innerHTML = userData.results.map(r => `
+        <div class="result-card">
+            <div class="result-img"><img src="${r.image}"/></div>
+            <div class="result-info">
+                <div style="display:flex; justify-content:space-between"><b>${r.topic}</b><span class="badge badge-done">Saved</span></div>
+                <div style="font-weight:800; color:var(--accent)">${r.short}</div>
+                <div class="long-text">${r.long}</div>
+            </div>
+        </div>
+    `).join('');
 }
 
-// ═══════════════════════════════════════════════════
-//  GEMINI
-// ═══════════════════════════════════════════════════
-async function callGemini(apiKey,prompt){
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}]})});
-  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(JSON.stringify(e)||`Gemini ${res.status}`);}
-  const data=await res.json();return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+async function exportAll() {
+    if(userData.results.length === 0) return;
+    const zip = new JSZip();
+    userData.results.forEach((res, i) => {
+        zip.file(`${i}_${res.topic}.txt`, `${res.short}\n\n${res.long}`);
+    });
+    const content = await zip.generateAsync({type:"blob"});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(content);
+    link.download = "history_archive.zip";
+    link.click();
 }
 
-// ═══════════════════════════════════════════════════
-//  COMPOSITE
-// ═══════════════════════════════════════════════════
-function compositeImage(base64Img,shortText,logoUrl){
-  return new Promise(resolve=>{
-    const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,1080,1350);
-    const img=new Image();
-    img.onload=()=>{
-      ctx.drawImage(img,0,0,1080,1080);ctx.fillStyle='#000';ctx.fillRect(0,1140,1080,210);
-      ctx.font='700 48px Syne,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      const clean=shortText.replace(/<yellow>|<\/yellow>/g,'');
-      const words=clean.split(' ');const lines=[];let cur='';
-      words.forEach(w=>{const t=cur+w+' ';if(ctx.measureText(t).width>980){lines.push(cur.trim());cur=w+' ';}else cur=t;});lines.push(cur.trim());
-      const ym=shortText.match(/<yellow>(.*?)<\/yellow>/);const yw=ym?ym[1]:null;
-      let y=1140+105-((lines.length-1)*30);
-      lines.forEach(line=>{
-        if(yw&&line.includes(yw)){const parts=line.split(yw);let x=540-(ctx.measureText(line).width/2);ctx.textAlign='left';ctx.fillStyle='#fff';ctx.fillText(parts[0],x,y);x+=ctx.measureText(parts[0]).width;ctx.fillStyle='#FFD700';ctx.fillText(yw,x,y);x+=ctx.measureText(yw).width;ctx.fillStyle='#fff';ctx.fillText(parts[1]||'',x,y);}
-        else{ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(line,540,y);}y+=60;
-      });
-      if(logoUrl){const logo=new Image();logo.onload=()=>{ctx.drawImage(logo,965,1025,100,100);resolve(canvas.toDataURL('image/jpeg',.9));};logo.src=logoUrl;}
-      else resolve(canvas.toDataURL('image/jpeg',.9));
-    };
-    img.src=`data:image/png;base64,${base64Img}`;
-  });
-}
-
-// ═══════════════════════════════════════════════════
-//  PROCESS ONE
-// ═══════════════════════════════════════════════════
-async function processOne(res){
-  const profile=userData.profiles.find(p=>p.id===res.pageProfileId);if(!profile)return;
-  updateResultStatus(res.id,'processing');await sleep(500);
-  const prompt=`You are a history content author for high-engagement Facebook posts for the page "${profile.name}".
-Topic: ${res.topic}
-
-Req 1: Short Text (max 8 words). Punchy. Wrap ONE key term in <yellow>...</yellow>
-Req 2: Long Description (~280 words, 6 paragraphs, hook in first sentence, natural storytelling).
-
-Return ONLY valid raw JSON (no markdown):
-{ "short": "text with <yellow>keyword</yellow>", "long": "text content" }`;
-  let textData;
-  try{const raw=await callGemini(userData.apiKeys[0],prompt);textData=JSON.parse(raw.replace(/```json\n?|```\n?/g,'').trim());}
-  catch(e){throw new Error('Text generation failed: '+e.message);}
-  const imgPrompt=`Ultra-realistic cinematic DSLR 50mm historical scene: ${res.topic}. Cinematic lighting, museum-quality detail, 4k, historically accurate.`;
-  let base64Img;
-  try{base64Img=await fetchFluxImage(imgPrompt);}catch(e){throw new Error('Image generation failed: '+e.message);}
-  const composited=await compositeImage(base64Img,textData.short,profile.logoUrl);
-  userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'done',shortText:textData.short,longText:textData.long,imageUrl:`data:image/png;base64,${base64Img}`,compositedImageUrl:composited}:r);
-  scheduleSync();renderResult(res.id);
-  if(exportDirHandle){try{const fn=profile.name.replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(fn,{create:true});let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}const next=max+1;const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(composited).then(r=>r.blob()));await iW.close();const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(textData.long||'');await tW.close();}catch(e){console.error('Auto-save:',e);}}
-}
-
-// ═══════════════════════════════════════════════════
-//  BATCH
-// ═══════════════════════════════════════════════════
-async function processBatch(){
-  if(isProcessing)return;
-  if(!csvData.length){notify('Import a CSV/XLSX first.','error');return;}
-  if(!userData.apiKeys.length){notify('Add a Gemini API key in Vault.','error');return;}
-  if(!getActiveWorker()){notify('No active FLUX Worker.','error');return;}
-  const selId=document.getElementById('sel-profile').value;
-  if(!selId){notify('Select a Guild.','error');return;}
-  const targetProfiles=selId==='ALL'?userData.profiles:userData.profiles.filter(p=>p.id===selId);
-  if(!targetProfiles.length){notify('No Guild found.','error');return;}
-  let topics=[...csvData];if(pickRandom)topics=[csvData[Math.floor(Math.random()*csvData.length)]];
-  const newResults=[];
-  for(const profile of targetProfiles)for(const t of topics)newResults.push({id:Math.random().toString(36).substr(2,9),topic:t.topic,shortText:'',longText:'',imageUrl:'',compositedImageUrl:'',pageProfileId:profile.id,status:'pending'});
-  userData.results=[...newResults,...userData.results];scheduleSync();renderFeed();setProcessing(true);stopRequested=false;
-  for(const res of newResults){if(stopRequested)break;try{await processOne(res);}catch(e){userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r);scheduleSync();renderResult(res.id);}}
-  setProcessing(false);updateButtons();
-  if(!stopRequested)notify('Batch completed!','success');else notify('Stopped.','info');
-}
-async function resumePending(){
-  const toResume=userData.results.filter(r=>r.status==='pending'||r.status==='error');if(!toResume.length){notify('Nothing to resume.','info');return;}
-  setProcessing(true);stopRequested=false;
-  for(const res of toResume){if(stopRequested)break;try{await processOne(res);}catch(e){userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r);scheduleSync();renderResult(res.id);}}
-  setProcessing(false);updateButtons();notify('Resume complete.','success');
-}
-function stopProcessing(){stopRequested=true;}
-function clearResults(){if(!confirm('Clear all history?'))return;userData.results=[];scheduleSync();renderFeed();updateButtons();notify('Cleared.','info');}
-function updateButtons(){
-  const hD=userData.results.some(r=>r.status==='done'),hP=userData.results.some(r=>r.status==='pending'||r.status==='error');
-  const eb=document.getElementById('export-btn'),rb=document.getElementById('resume-btn'),cb=document.getElementById('clear-btn');
-  if(eb)eb.style.display=hD?'inline-flex':'none';if(rb)rb.style.display=hP&&!isProcessing?'inline-flex':'none';if(cb)cb.style.display=userData.results.length>0&&!isProcessing?'inline-flex':'none';
-}
-
-// ═══════════════════════════════════════════════════
-//  FEED
-// ═══════════════════════════════════════════════════
-function renderFeed(){
-  const feed=document.getElementById('feed');if(!feed)return;
-  const emptyEl=document.getElementById('empty-feed');if(emptyEl)emptyEl.style.display=userData.results.length===0?'flex':'none';
-  const ids=new Set(userData.results.map(r=>r.id));
-  feed.querySelectorAll('.result-card').forEach(c=>{if(!ids.has(c.dataset.id))c.remove();});
-  userData.results.forEach(r=>{
-    if(!document.querySelector(`[data-id="${r.id}"]`)){const el=document.createElement('div');el.className='result-card';el.dataset.id=r.id;el.innerHTML=buildCardHTML(r);feed.insertBefore(el,feed.querySelector('.result-card')||emptyEl);}
-  });
-}
-function renderResult(id){const res=userData.results.find(r=>r.id===id);if(!res)return;const el=document.querySelector(`[data-id="${id}"]`);if(!el)return;el.innerHTML=buildCardHTML(res);const e=document.getElementById('empty-feed');if(e)e.style.display='none';}
-function updateResultStatus(id,status){userData.results=userData.results.map(r=>r.id===id?{...r,status}:r);renderResult(id);}
-function buildCardHTML(res){
-  const profile=userData.profiles.find(p=>p.id===res.pageProfileId);
-  const badge={done:`<span class="badge badge-done">Archived</span>`,processing:`<span class="badge badge-processing"><span class="spinner sm"></span> Forging</span>`,error:`<span class="badge badge-error">Error</span>`,pending:`<span class="badge badge-pending">Pending</span>`}[res.status]||'';
-  const imgCol=res.status==='processing'?`<div class="result-img-placeholder"><span class="spinner"></span><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-top:8px;color:var(--text3);font-family:var(--mono)">Rendering…</div></div>`:res.status==='done'&&res.compositedImageUrl?`<img src="${res.compositedImageUrl}" alt="${res.topic}"/>`:`<div class="result-img-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
-  const content=res.status==='done'?`<div class="overlay-box"><div class="overlay-label">Overlay Caption</div><div class="overlay-text">${res.shortText.replace(/<yellow>(.*?)<\/yellow>/g,'<span style="color:#FFD700;font-weight:800">$1</span>')}</div></div><div><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Social Chronicle</div><div class="long-text-box"><p>${res.longText}</p></div></div>`:res.status==='error'?`<div class="error-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-title">Error</div><div class="error-msg">${res.error||'Unknown'}</div></div></div>`:'';
-  return `<div class="result-inner"><div class="result-img-col">${imgCol}</div><div class="result-content"><div class="result-header"><div><div class="result-guild">${profile?.logoUrl?`<img src="${profile.logoUrl}" alt=""/>`:''}  <span class="result-guild-name">${profile?.name||'Unknown'}</span></div><div class="result-topic">${res.topic}</div></div>${badge}</div>${content}</div></div>`;
-}
-
-// ═══════════════════════════════════════════════════
-//  PC FOLDER / EXPORT
-// ═══════════════════════════════════════════════════
-let exportDirHandle=null;
-async function connectFolder(){
-  if(!('showDirectoryPicker'in window)){notify('Use Chrome or Edge.','error');return;}
-  try{exportDirHandle=await window.showDirectoryPicker({mode:'readwrite'});document.getElementById('folder-label').textContent='Folder ✓';document.getElementById('folder-btn').className='btn btn-success btn-sm';notify('PC Folder active!','success');}catch(e){if(e.name!=='AbortError')notify('Folder failed.','error');}
-}
-async function exportAll(){
-  const done=userData.results.filter(r=>r.status==='done');if(!done.length)return;
-  if(exportDirHandle){for(const res of done){try{const pn=(userData.profiles.find(p=>p.id===res.pageProfileId)?.name||'Misc').replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(pn,{create:true});let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}const next=max+1;const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(res.compositedImageUrl).then(r=>r.blob()));await iW.close();const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(res.longText);await tW.close();}catch(e){console.error(e);}}notify('Exported to PC folder!','success');return;}
-  const zip=new JSZip();
-  for(const res of done){const pn=(userData.profiles.find(p=>p.id===res.pageProfileId)?.name||'Misc').replace(/[^a-z0-9]/gi,'_');const bn=res.topic.replace(/[^a-z0-9]/gi,'_').substring(0,30);const folder=zip.folder(pn);if(res.compositedImageUrl)folder.file(`${bn}.jpg`,res.compositedImageUrl.split(',')[1],{base64:true});folder.file(`${bn}.txt`,res.longText);}
-  const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`History_Archive_${new Date().toISOString().slice(0,10)}.zip`;a.click();notify('ZIP downloaded!','success');
-}
-
-// ═══════════════════════════════════════════════════
-//  RENDER ALL + INIT
-// ═══════════════════════════════════════════════════
-function renderAll(){renderKeys();renderGuilds();renderProfileSelect();renderWorkers();renderFeed();updateButtons();updateWarnings();}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-
-// ── BOOT ──
-showAuthScreen();
 </script>
 </body>
 </html>
