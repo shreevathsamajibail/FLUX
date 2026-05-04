@@ -8,270 +8,464 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:       #0c0c0f;
-  --surface:  #111116;
-  --surface2: #18181f;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.13);
-  --text:     #f0f0f5;
-  --text2:    #7a7a90;
-  --text3:    #4a4a60;
+  --bg:       #0a0a0d;
+  --surface:  #101014;
+  --surface2: #16161c;
+  --surface3: #1e1e27;
+  --border:   rgba(255,255,255,0.06);
+  --border2:  rgba(255,255,255,0.11);
+  --text:     #eeeef5;
+  --text2:    #7070888;
+  --text3:    #45455a;
   --accent:   #c8ff00;
-  --red:      #ff4f4f;
-  --red-dim:  rgba(255,79,79,0.12);
-  --green:    #3dffa0;
-  --green-dim:rgba(61,255,160,0.1);
-  --amber:    #ffb347;
-  --amber-dim:rgba(255,179,71,0.1);
-  --radius:   18px;
-  --radius-sm:10px;
-  --shadow:   0 2px 12px rgba(0,0,0,0.5);
-  --shadow-lg:0 8px 40px rgba(0,0,0,0.7);
+  --accent2:  #a8d900;
+  --red:      #ff5050;
+  --red-dim:  rgba(255,80,80,0.1);
+  --green:    #3dffaa;
+  --green-dim:rgba(61,255,170,0.08);
+  --amber:    #ffb830;
+  --amber-dim:rgba(255,184,48,0.1);
+  --blue:     #60a5fa;
+  --blue-dim: rgba(96,165,250,0.1);
+  --radius:   20px;
+  --radius-sm:12px;
+  --shadow:   0 2px 16px rgba(0,0,0,0.6);
+  --shadow-lg:0 8px 48px rgba(0,0,0,0.8);
   --font:     'Syne', sans-serif;
   --mono:     'DM Mono', monospace;
-  --nav-w:    80px;
+  --nav-w:    72px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
 
-/* ─── AUTH SCREEN ─── */
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ═══════════════════════
+   AUTH SCREEN
+═══════════════════════ */
 #auth-screen{
   position:fixed;inset:0;background:var(--bg);
   display:flex;align-items:center;justify-content:center;
   z-index:1000;
 }
-.auth-wrap{width:100%;max-width:420px;padding:16px}
-
+.auth-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.auth-bg::before{
+  content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(200,255,0,0.04) 0%,transparent 65%);
+}
+.auth-wrap{width:100%;max-width:400px;padding:16px;position:relative;z-index:2}
 .auth-card{
   background:var(--surface);border:1px solid var(--border2);
-  border-radius:28px;padding:44px 48px;
-  box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
+  border-radius:28px;padding:40px 44px;
+  box-shadow:0 0 0 1px rgba(200,255,0,0.03),var(--shadow-lg);
 }
-.auth-card::before{
-  content:'';position:absolute;top:-80px;right:-80px;
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(200,255,0,0.06) 0%,transparent 70%);
-  border-radius:50%;pointer-events:none;
-}
-
-.auth-logo{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:36px}
 .auth-logo-icon{
-  width:46px;height:46px;background:var(--accent);
-  border-radius:13px;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
+  width:44px;height:44px;background:var(--accent);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .auth-logo-icon svg{color:#000}
-.auth-logo-name{font-size:20px;font-weight:800;letter-spacing:-.4px}
-.auth-logo-sub{font-size:9px;color:var(--text2);font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
-
-/* greeting line */
+.auth-logo-name{font-size:19px;font-weight:800;letter-spacing:-.5px}
+.auth-logo-sub{font-size:8.5px;color:var(--text3);font-family:var(--mono);letter-spacing:.22em;text-transform:uppercase;margin-top:3px}
 .auth-greeting{
-  margin-bottom:28px;
-  padding:14px 16px;
-  background:rgba(200,255,0,0.05);
-  border:1px solid rgba(200,255,0,0.12);
-  border-radius:12px;
-  display:flex;align-items:center;gap:12px;
+  margin-bottom:24px;padding:12px 16px;
+  background:rgba(200,255,0,0.04);border:1px solid rgba(200,255,0,0.1);
+  border-radius:14px;display:flex;align-items:center;gap:12px;
 }
 .auth-greeting-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:rgba(200,255,0,0.15);
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(200,255,0,0.12);
   display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:800;color:var(--accent);flex-shrink:0;
+  font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0;
 }
-.auth-greeting-text{font-size:13px;font-weight:600}
-.auth-greeting-sub{font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px}
-
-/* mode switcher (register / login) */
+.auth-greeting-text{font-size:12.5px;font-weight:700}
+.auth-greeting-sub{font-size:9.5px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .auth-mode-switch{
-  display:flex;gap:4px;background:var(--surface2);
-  border-radius:12px;padding:4px;margin-bottom:28px;
+  display:flex;gap:3px;background:var(--surface2);
+  border-radius:12px;padding:3px;margin-bottom:26px;
 }
 .auth-mode-btn{
-  flex:1;padding:9px;border:none;background:none;
-  color:var(--text3);font-family:var(--font);font-size:11px;
+  flex:1;padding:8px;border:none;background:none;
+  color:var(--text3);font-family:var(--font);font-size:10.5px;
   font-weight:700;text-transform:uppercase;letter-spacing:.1em;
-  border-radius:9px;cursor:pointer;transition:all .2s;
+  border-radius:10px;cursor:pointer;transition:all .2s;
 }
-.auth-mode-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.5)}
-
-/* field */
-.auth-field{margin-bottom:18px}
-.auth-label{
-  display:block;font-size:8px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.18em;
-  color:var(--text3);margin-bottom:7px;font-family:var(--mono);
-}
+.auth-mode-btn.active{background:var(--surface3);color:var(--text);box-shadow:0 1px 8px rgba(0,0,0,.6)}
+.auth-field{margin-bottom:16px}
+.auth-label{display:block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:var(--text3);margin-bottom:7px;font-family:var(--mono)}
 .auth-input{
-  width:100%;background:var(--surface2);
-  border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:12px 15px;font-family:var(--font);font-size:14px;color:var(--text);
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 15px;
+  font-family:var(--font);font-size:14px;color:var(--text);
   outline:none;transition:border-color .2s;
 }
-.auth-input:focus{border-color:rgba(200,255,0,0.5)}
-
-/* PIN grid */
-.pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.auth-input:focus{border-color:rgba(200,255,0,0.45)}
+.pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
 .pin-digit{
   background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;height:64px;font-size:28px;font-weight:800;
+  border-radius:12px;height:62px;font-size:26px;font-weight:800;
   text-align:center;color:var(--text);font-family:var(--mono);
   outline:none;transition:border-color .2s,background .2s;width:100%;
 }
-.pin-digit:focus{border-color:rgba(200,255,0,0.5);background:rgba(200,255,0,0.03)}
-.pin-digit.filled{border-color:rgba(200,255,0,0.35);color:var(--accent)}
-
-/* pin availability indicator */
-.pin-status{
-  margin-top:8px;font-size:10px;font-family:var(--mono);
-  height:16px;transition:opacity .2s;
-}
+.pin-digit:focus{border-color:rgba(200,255,0,0.45);background:rgba(200,255,0,0.02)}
+.pin-digit.filled{border-color:rgba(200,255,0,0.3);color:var(--accent)}
+.pin-status{margin-top:8px;font-size:10px;font-family:var(--mono);height:16px}
 .pin-status.ok   {color:var(--green)}
 .pin-status.taken{color:var(--red)}
 .pin-status.check{color:var(--text3);animation:pulse 1s ease-in-out infinite}
-
-/* submit button */
 .auth-btn{
   width:100%;background:var(--accent);color:#000;
-  border:none;border-radius:var(--radius-sm);padding:15px;
-  font-family:var(--font);font-size:12px;font-weight:800;
-  text-transform:uppercase;letter-spacing:.1em;
-  cursor:pointer;transition:all .2s;margin-top:6px;
+  border:none;border-radius:var(--radius-sm);padding:14px;
+  font-family:var(--font);font-size:11.5px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.12em;
+  cursor:pointer;transition:all .2s;margin-top:4px;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.auth-btn:hover:not(:disabled){background:#d4ff1a;transform:translateY(-1px)}
-.auth-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
-
-/* error */
+.auth-btn:hover:not(:disabled){background:#d6ff1a;transform:translateY(-1px)}
+.auth-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
 .auth-err{
-  margin-top:12px;background:var(--red-dim);
-  border:1px solid rgba(255,79,79,.2);border-radius:10px;
-  padding:10px 14px;font-size:11px;color:var(--red);
+  margin-top:12px;background:var(--red-dim);border:1px solid rgba(255,80,80,.2);
+  border-radius:10px;padding:10px 14px;font-size:11px;color:var(--red);
   font-family:var(--mono);display:none;line-height:1.5;
 }
-
-/* not-you link */
-.not-you{
-  margin-top:16px;text-align:center;font-size:10px;
-  color:var(--text3);font-family:var(--mono);cursor:pointer;
-  transition:color .2s;
-}
+.not-you{margin-top:16px;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono);cursor:pointer;transition:color .2s}
 .not-you:hover{color:var(--text2);text-decoration:underline}
+.auth-hint{margin-top:12px;text-align:center;font-size:9px;color:var(--text3);font-family:var(--mono);line-height:1.7}
 
-/* hint */
-.auth-hint{margin-top:14px;text-align:center;font-size:9px;color:var(--text3);font-family:var(--mono);line-height:1.7}
+/* ═══════════════════════
+   APP SHELL
+═══════════════════════ */
+#app{display:none;width:100%;height:100vh;overflow:hidden}
 
-/* ─── MAIN APP ─── */
-#app{display:none;width:100%}
-
+/* NAV */
 .nav{
-  width:var(--nav-w);min-width:var(--nav-w);
+  width:var(--nav-w);min-width:var(--nav-w);height:100vh;
   background:var(--surface);border-right:1px solid var(--border);
   display:flex;flex-direction:column;align-items:center;
-  padding:20px 0;gap:4px;
-  position:fixed;top:0;left:0;height:100vh;z-index:50;
+  padding:18px 0;gap:2px;position:fixed;top:0;left:0;z-index:50;
 }
 .nav-logo{
-  width:42px;height:42px;background:var(--accent);
-  border-radius:12px;display:flex;align-items:center;justify-content:center;
-  margin-bottom:20px;flex-shrink:0;
+  width:40px;height:40px;background:var(--accent);
+  border-radius:11px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:18px;flex-shrink:0;
 }
 .nav-logo svg{color:#000}
 .nav-item{
-  width:60px;display:flex;flex-direction:column;
-  align-items:center;gap:5px;padding:10px 6px;
-  border-radius:12px;cursor:pointer;transition:all .15s;
-  border:none;background:none;color:var(--text3);
+  width:56px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:10px 5px;border-radius:12px;cursor:pointer;
+  transition:all .15s;border:none;background:none;color:var(--text3);
 }
 .nav-item:hover{background:var(--surface2);color:var(--text2)}
-.nav-item.active{background:rgba(200,255,0,0.1);color:var(--accent)}
-.nav-item svg{width:18px;height:18px}
-.nav-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
-.nav-bottom{
-  margin-top:auto;display:flex;flex-direction:column;
-  align-items:center;gap:8px;padding-top:12px;
-  border-top:1px solid var(--border);width:100%;
-}
+.nav-item.active{background:rgba(200,255,0,0.08);color:var(--accent)}
+.nav-item svg{width:17px;height:17px}
+.nav-label{font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
+.nav-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px;border-top:1px solid var(--border);width:100%}
 .nav-user{
-  width:38px;height:38px;background:var(--surface2);
+  width:36px;height:36px;background:var(--surface2);
   border:1px solid var(--border);border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;transition:all .2s;
-  font-size:14px;font-weight:800;color:var(--accent);
-  position:relative;
+  font-size:13px;font-weight:800;color:var(--accent);position:relative;
 }
 .nav-user:hover{border-color:var(--accent)}
 .nav-user-tip{
   position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
   background:var(--surface);border:1px solid var(--border2);
-  border-radius:8px;padding:6px 12px;
-  font-size:10px;font-family:var(--mono);white-space:nowrap;
+  border-radius:8px;padding:5px 11px;
+  font-size:9.5px;font-family:var(--mono);white-space:nowrap;
   pointer-events:none;opacity:0;transition:opacity .2s;color:var(--text2);
 }
 .nav-user:hover .nav-user-tip{opacity:1}
 
-main{margin-left:var(--nav-w);flex:1;padding:24px 28px 80px;max-width:1280px}
+/* MAIN CONTENT */
+main{margin-left:var(--nav-w);flex:1;height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
-/* topbar */
+/* TAB PANELS */
+.tab-panel{display:none;flex:1;overflow:hidden}
+.tab-panel.active{display:flex;flex-direction:column}
+
+/* ═══════════════════════
+   TOP BAR (per-tab)
+═══════════════════════ */
 .topbar{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px 22px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:14px 24px;
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:24px;box-shadow:var(--shadow);
+  flex-shrink:0;
 }
-.topbar-left{display:flex;align-items:center;gap:14px}
-.topbar-icon{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-icon{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center}
 .topbar-icon svg{color:#000}
-.topbar-title{font-size:18px;font-weight:800;letter-spacing:-.4px}
-.topbar-sub{font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;color:var(--text2);margin-top:2px}
+.topbar-title{font-size:17px;font-weight:800;letter-spacing:-.4px}
+.topbar-sub{font-size:8.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;color:var(--text3);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
-.sync-pill{
-  display:flex;align-items:center;gap:7px;padding:7px 14px;
-  border-radius:100px;border:1px solid var(--border);
-  font-size:9px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.1em;font-family:var(--mono);color:var(--text2);
-}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
-.sync-dot.syncing{background:var(--amber);animation:pulse 1.2s ease-in-out infinite}
-.sync-dot.synced {background:var(--green)}
-
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes spin  {to{transform:rotate(360deg)}}
-
-/* buttons */
+/* ═══════════════════════
+   BUTTONS
+═══════════════════════ */
 .btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:9px 18px;border-radius:100px;font-size:11px;font-weight:700;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:100px;font-size:10.5px;font-weight:700;
   text-transform:uppercase;letter-spacing:.08em;
   cursor:pointer;border:none;transition:all .15s;white-space:nowrap;font-family:var(--font);
 }
 .btn-primary{background:var(--accent);color:#000}
-.btn-primary:hover:not(:disabled){background:#d4ff1a;transform:translateY(-1px)}
+.btn-primary:hover:not(:disabled){background:#d6ff1a;transform:translateY(-1px)}
 .btn-primary:disabled{opacity:.3;cursor:not-allowed}
 .btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
 .btn-outline:hover{background:var(--surface2);color:var(--text)}
-.btn-danger {background:var(--red-dim);color:var(--red);border:1px solid rgba(255,79,79,.2)}
-.btn-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,255,160,.2)}
-.btn-sm{padding:6px 12px;font-size:10px}
-.btn svg{width:12px;height:12px}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,80,80,.2)}
+.btn-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,255,170,.2)}
+.btn-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,184,48,.2)}
+.btn-sm{padding:6px 12px;font-size:9.5px}
+.btn svg{width:11px;height:11px}
 
-/* tabs */
-.tab-panel{display:none}
-.tab-panel.active{display:block}
+/* ═══════════════════════
+   BADGES / CHIPS
+═══════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;font-family:var(--mono)}
+.badge-done{background:rgba(200,255,0,.08);color:var(--accent);border:1px solid rgba(200,255,0,.2)}
+.badge-done::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);display:block}
+.badge-processing{background:var(--surface2);border:1px solid var(--border);color:var(--text2);animation:pulse 1.5s ease-in-out infinite}
+.badge-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,80,80,.2)}
+.badge-pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
 
-/* gen grid */
-.gen-grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
-@media(max-width:900px){.gen-grid{grid-template-columns:1fr}}
+/* ═══════════════════════
+   TOAST
+═══════════════════════ */
+.notif{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:var(--surface);color:var(--text);border:1px solid var(--border2);
+  border-radius:12px;padding:11px 20px;font-size:11.5px;font-weight:600;
+  z-index:9998;opacity:0;pointer-events:none;transition:all .3s;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;max-width:90vw;
+  font-family:var(--mono);box-shadow:var(--shadow-lg);
+}
+.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.notif.success{background:var(--green-dim);color:var(--green);border-color:rgba(61,255,170,.2)}
+.notif.error  {background:var(--red-dim);color:var(--red);border-color:rgba(255,80,80,.2)}
 
-/* card */
+/* ═══════════════════════
+   ANIMATIONS
+═══════════════════════ */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+.spinner{width:14px;height:14px;border:2px solid rgba(200,255,0,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.spinner.sm{width:9px;height:9px;border-width:1.5px}
+.spinner.dark{border-color:rgba(0,0,0,.15);border-top-color:#000}
+.spinner.grey{border-color:rgba(255,255,255,.08);border-top-color:var(--text3)}
+
+/* ═══════════════════════════════════════
+   BUILD TAB — CHAT INTERFACE
+═══════════════════════════════════════ */
+#tab-build{
+  display:none;flex-direction:column;height:100%;overflow:hidden;
+}
+#tab-build.active{display:flex}
+
+/* Chat header bar */
+.chat-header{
+  padding:14px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);flex-shrink:0;
+}
+.chat-header-left{display:flex;align-items:center;gap:12px}
+.chat-icon{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.chat-icon svg{color:#000}
+.chat-title{font-size:17px;font-weight:800;letter-spacing:-.4px}
+.chat-sub{font-size:8.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;color:var(--text3);margin-top:1px}
+.chat-controls{display:flex;align-items:center;gap:8px}
+
+/* Context bar (folder + guild selector) */
+.chat-context-bar{
+  padding:10px 24px;border-bottom:1px solid var(--border);
+  background:var(--surface2);flex-shrink:0;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.ctx-chip{
+  display:flex;align-items:center;gap:7px;padding:7px 14px;
+  background:var(--surface3);border:1px solid var(--border2);
+  border-radius:100px;font-size:10px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--mono);
+}
+.ctx-chip:hover{border-color:var(--accent);color:var(--accent)}
+.ctx-chip.active{background:rgba(200,255,0,0.06);border-color:rgba(200,255,0,.25);color:var(--accent)}
+.ctx-chip svg{width:11px;height:11px}
+.ctx-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.ctx-chip-dot.green{background:var(--green);box-shadow:0 0 6px rgba(61,255,170,.4)}
+.ctx-chip-dot.amber{background:var(--amber)}
+.ctx-sep{width:1px;height:20px;background:var(--border2)}
+
+/* Chat messages area */
+.chat-messages{
+  flex:1;overflow-y:auto;padding:24px;
+  display:flex;flex-direction:column;gap:18px;
+}
+
+/* Bubbles */
+.msg{display:flex;gap:12px;animation:fadeUp .25s ease}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;flex-shrink:0;margin-top:2px;
+}
+.msg-avatar.ai{background:var(--accent);color:#000}
+.msg-avatar.user{background:var(--surface3);border:1px solid var(--border2);color:var(--accent)}
+.msg-body{max-width:72%;display:flex;flex-direction:column;gap:8px}
+.msg.user .msg-body{align-items:flex-end}
+.msg-bubble{
+  padding:13px 17px;border-radius:18px;font-size:13.5px;line-height:1.65;
+}
+.msg.ai .msg-bubble{
+  background:var(--surface);border:1px solid var(--border2);
+  border-bottom-left-radius:5px;color:var(--text);
+}
+.msg.user .msg-bubble{
+  background:var(--accent);color:#000;font-weight:600;
+  border-bottom-right-radius:5px;
+}
+.msg-time{font-size:9px;color:var(--text3);font-family:var(--mono)}
+
+/* Result cards inside chat */
+.chat-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:4px;max-width:800px}
+.chat-result-card{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:16px;overflow:hidden;transition:all .2s;
+}
+.chat-result-card:hover{border-color:rgba(200,255,0,.2);transform:translateY(-2px)}
+.crc-img{width:100%;aspect-ratio:4/5;background:var(--surface3);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.crc-img img{width:100%;height:100%;object-fit:cover}
+.crc-img-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;opacity:.2}
+.crc-img-placeholder svg{width:24px;height:24px}
+.crc-shimmer{
+  background:linear-gradient(90deg,var(--surface3) 25%,var(--surface2) 50%,var(--surface3) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;width:100%;height:100%;
+}
+.crc-body{padding:12px 14px}
+.crc-topic{font-size:11.5px;font-weight:700;margin-bottom:4px;line-height:1.4}
+.crc-guild{font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.crc-guild img{width:13px;height:13px;border-radius:50%}
+.crc-caption{font-size:11px;color:var(--text2);line-height:1.5;font-family:var(--mono);border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+.crc-long{font-size:10.5px;color:var(--text3);line-height:1.6;max-height:60px;overflow:hidden;margin-top:6px}
+.crc-actions{display:flex;gap:6px;margin-top:10px}
+.crc-btn{
+  flex:1;padding:7px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface3);color:var(--text3);font-size:9px;font-family:var(--mono);
+  font-weight:600;cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;letter-spacing:.07em;
+}
+.crc-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Progress bubble */
+.progress-bubble{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:18px;border-bottom-left-radius:5px;
+  padding:14px 18px;max-width:400px;
+}
+.progress-title{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.progress-bar-wrap{background:var(--surface2);border-radius:100px;height:4px;overflow:hidden;margin-bottom:8px}
+.progress-bar{height:100%;background:var(--accent);border-radius:100px;transition:width .4s ease}
+.progress-items{display:flex;flex-direction:column;gap:4px}
+.progress-item{display:flex;align-items:center;gap:8px;font-size:10px;font-family:var(--mono);color:var(--text3)}
+.progress-item.active{color:var(--text2)}
+.progress-item.done{color:var(--green)}
+.progress-item.error{color:var(--red)}
+.progress-item-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--text3)}
+.progress-item.active .progress-item-dot{background:var(--amber);animation:pulse 1s ease-in-out infinite}
+.progress-item.done  .progress-item-dot{background:var(--green)}
+.progress-item.error .progress-item-dot{background:var(--red)}
+
+/* Welcome / empty state */
+.chat-welcome{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;opacity:.4;padding:40px;text-align:center;
+}
+.chat-welcome-icon{width:60px;height:60px;background:var(--surface2);border-radius:16px;display:flex;align-items:center;justify-content:center}
+.chat-welcome-icon svg{width:28px;height:28px;color:var(--text3)}
+.chat-welcome h3{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.chat-welcome p{font-size:12px;color:var(--text2);line-height:1.7;max-width:340px;font-family:var(--mono)}
+.chat-welcome-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.cw-chip{
+  padding:8px 16px;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:100px;font-size:10.5px;font-family:var(--mono);
+  color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.cw-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,255,0,0.04)}
+
+/* Chat input area */
+.chat-input-area{
+  padding:16px 24px 20px;border-top:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;
+}
+.chat-input-row{
+  display:flex;gap:10px;align-items:flex-end;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:16px;padding:10px 12px 10px 16px;
+  transition:border-color .2s;
+}
+.chat-input-row:focus-within{border-color:rgba(200,255,0,.3)}
+.chat-attach-zone{display:flex;align-items:center;gap:6px}
+.chat-attach-btn{
+  width:32px;height:32px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface3);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;flex-shrink:0;color:var(--text3);
+}
+.chat-attach-btn:hover{border-color:var(--accent);color:var(--accent)}
+.chat-attach-btn svg{width:14px;height:14px}
+.chat-file-pill{
+  display:flex;align-items:center;gap:7px;padding:5px 12px;
+  background:rgba(200,255,0,0.06);border:1px solid rgba(200,255,0,.15);
+  border-radius:100px;font-size:9.5px;font-family:var(--mono);color:var(--accent);
+  white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;
+}
+.chat-file-pill-x{cursor:pointer;opacity:.6;margin-left:2px}
+.chat-file-pill-x:hover{opacity:1}
+.chat-textarea{
+  flex:1;background:none;border:none;outline:none;
+  font-family:var(--font);font-size:13.5px;color:var(--text);
+  resize:none;line-height:1.5;min-height:22px;max-height:120px;
+  padding:5px 0;
+}
+.chat-textarea::placeholder{color:var(--text3)}
+.chat-send-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--accent);border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+}
+.chat-send-btn:hover:not(:disabled){background:#d6ff1a;transform:scale(1.05)}
+.chat-send-btn:disabled{opacity:.3;cursor:not-allowed}
+.chat-send-btn svg{color:#000;width:15px;height:15px}
+.chat-send-btn.stop-mode{background:var(--red);animation:pulse 1.5s ease-in-out infinite}
+.chat-send-btn.stop-mode svg{color:#fff}
+.chat-hints{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.chat-hint-pill{
+  padding:5px 12px;background:var(--surface3);border:1px solid var(--border);
+  border-radius:100px;font-size:9.5px;font-family:var(--mono);color:var(--text3);
+  cursor:pointer;transition:all .15s;
+}
+.chat-hint-pill:hover{border-color:var(--border2);color:var(--text2)}
+
+/* ═══════════════════════
+   GUILDS TAB
+═══════════════════════ */
+#tab-guilds{overflow-y:auto;padding:28px}
+.guilds-wrap{max-width:860px;margin:0 auto}
+.guilds-grid{display:grid;grid-template-columns:320px 1fr;gap:24px}
+@media(max-width:700px){.guilds-grid{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
-.card-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--text3);margin-bottom:18px;font-family:var(--mono)}
-
-/* form */
+.card-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--text3);margin-bottom:18px;font-family:var(--mono)}
+.field{margin-bottom:16px}
 label.lbl{display:block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:6px;font-family:var(--mono)}
 input[type="text"],input[type="password"],input[type="url"],select,textarea{
   width:100%;background:var(--surface2);border:1px solid var(--border);
@@ -280,191 +474,103 @@ input[type="text"],input[type="password"],input[type="url"],select,textarea{
   outline:none;transition:border-color .15s;
 }
 input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4)}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4a60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-.field{margin-bottom:16px}
-
-/* upload zone */
-.upload-zone{
-  border:1.5px dashed var(--border2);border-radius:var(--radius);
-  padding:24px;display:flex;flex-direction:column;align-items:center;
-  gap:10px;cursor:pointer;transition:all .15s;text-align:center;background:var(--surface2);
-}
-.upload-zone:hover{border-color:var(--accent);background:rgba(200,255,0,.03)}
-.upload-zone-icon{width:40px;height:40px;background:var(--surface);border-radius:10px;display:flex;align-items:center;justify-content:center}
-.upload-zone-icon svg{color:var(--text3)}
-.upload-badge{background:var(--accent);color:#000;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;padding:4px 10px;border-radius:100px;font-family:var(--mono)}
-
-/* toggle */
-.toggle-row{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)}
-.toggle{width:42px;height:22px;border-radius:100px;background:var(--border2);border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-.toggle.on{background:var(--accent)}
-.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:left .2s}
-.toggle.on::after{left:23px}
-.toggle-title{font-size:12px;font-weight:600}
-.toggle-sub{font-size:10px;color:var(--text2);margin-top:2px;font-family:var(--mono)}
-
-.action-row{display:flex;gap:8px;margin-top:4px}
-
-/* feed */
-.feed{max-height:82vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:2px;padding-bottom:40px}
-.feed::-webkit-scrollbar{width:3px}
-.feed::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s}
-.result-card:hover{box-shadow:var(--shadow-lg);border-color:var(--border2)}
-.result-inner{display:grid;grid-template-columns:220px 1fr}
-@media(max-width:700px){.result-inner{grid-template-columns:1fr}}
-
-.result-img-col{background:var(--surface2);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:260px;padding:14px}
-.result-img-col img{max-width:100%;border-radius:8px;box-shadow:var(--shadow)}
-.result-img-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.2}
-.result-img-placeholder svg{width:28px;height:28px}
-.result-content{padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
-.result-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:12px}
-.result-guild{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.result-guild img{width:16px;height:16px;border-radius:50%}
-.result-guild-name{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);font-family:var(--mono)}
-.result-topic{font-size:13px;font-weight:700;letter-spacing:-.2px}
-
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;font-family:var(--mono)}
-.badge-done{background:rgba(200,255,0,.1);color:var(--accent);border:1px solid rgba(200,255,0,.2)}
-.badge-done::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);display:block}
-.badge-processing{background:var(--surface2);border:1px solid var(--border);color:var(--text2);animation:pulse 1.5s ease-in-out infinite}
-.badge-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,79,79,.2)}
-.badge-pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
-
-.overlay-box{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px}
-.overlay-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
-.overlay-text{font-size:11px;font-weight:600;line-height:1.5}
-.long-text-box{border-left:2px solid var(--border2);padding-left:12px;max-height:180px;overflow-y:auto}
-.long-text-box p{font-size:11px;line-height:1.7;color:var(--text2)}
-.long-text-box::-webkit-scrollbar{width:2px}
-.long-text-box::-webkit-scrollbar-thumb{background:var(--border)}
-.error-box{background:var(--red-dim);border:1px solid rgba(255,79,79,.15);border-radius:10px;padding:12px;display:flex;gap:8px}
-.error-box svg{color:var(--red);width:14px;height:14px;flex-shrink:0;margin-top:1px}
-.error-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--red);font-family:var(--mono)}
-.error-msg{font-size:10px;color:var(--red);font-family:var(--mono);margin-top:3px;line-height:1.5}
-.empty-feed{border:1.5px dashed var(--border);border-radius:var(--radius);height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:.25;color:var(--text2);font-size:13px;font-weight:600}
-.empty-feed svg{width:36px;height:36px}
-
-/* guilds */
-.profiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:700px){.profiles-grid{grid-template-columns:1fr}}
-.logo-picker{width:100px;height:100px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .15s}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2345455a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.logo-picker{width:90px;height:90px;background:var(--surface2);border:1.5px dashed var(--border2);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .15s}
 .logo-picker:hover{border-color:var(--accent)}
 .logo-picker img{width:100%;height:100%;object-fit:contain}
 .logo-picker svg{color:var(--text3)}
-.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);transition:all .15s}
+.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow);transition:all .15s}
 .guild-card:hover{border-color:var(--border2)}
-.guild-logo{width:50px;height:50px;background:var(--surface2);border-radius:10px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guild-logo{width:46px;height:46px;background:var(--surface2);border-radius:10px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .guild-logo img{width:100%;height:100%;object-fit:contain}
 .guild-info{flex:1;min-width:0}
 .guild-name{font-size:13px;font-weight:700}
-.guild-id{font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px}
-.guild-del{background:none;border:none;cursor:pointer;padding:7px;border-radius:8px;color:var(--text3);opacity:0;transition:all .15s}
+.guild-id{font-size:8.5px;font-family:var(--mono);color:var(--text3);margin-top:2px}
+.guild-del{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text3);opacity:0;transition:all .15s}
 .guild-card:hover .guild-del{opacity:1}
 .guild-del:hover{background:var(--red-dim);color:var(--red)}
+.gap-list{display:flex;flex-direction:column;gap:8px}
+.section-title{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:var(--text3);margin-bottom:12px;font-family:var(--mono)}
 
-/* workers */
-.wm-wrap{max-width:680px}
-.wm-active-bar{padding:14px 18px;background:var(--green-dim);border:1px solid rgba(61,255,160,.15);border-radius:14px;margin-bottom:20px}
-.wm-active-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.15em;color:var(--green);font-weight:700;margin-bottom:4px;font-family:var(--mono)}
-.wm-active-url{font-family:var(--mono);font-size:12px;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wm-active-meta{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px}
-.wm-url-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:8px;border:1px solid var(--border);background:var(--surface);transition:border-color .2s}
-.wm-url-row.is-active{border-color:rgba(61,255,160,.3);background:var(--green-dim)}
-.wm-url-row.is-exhausted{border-color:rgba(255,79,79,.2);background:var(--red-dim);opacity:.7}
+/* ═══════════════════════
+   SETTINGS TAB (combined Workers + Vault)
+═══════════════════════ */
+#tab-settings{overflow-y:auto;padding:28px}
+.settings-wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.settings-section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.settings-section-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.settings-section-icon.green{background:var(--green-dim);border:1px solid rgba(61,255,170,.2)}
+.settings-section-icon.green svg{color:var(--green)}
+.settings-section-icon.amber{background:var(--amber-dim);border:1px solid rgba(255,184,48,.2)}
+.settings-section-icon.amber svg{color:var(--amber)}
+.settings-section-icon.accent{background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,.15)}
+.settings-section-icon.accent svg{color:var(--accent)}
+.settings-section-title{font-size:14px;font-weight:800;letter-spacing:-.3px}
+.settings-section-sub{font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px}
+
+/* Workers */
+.wm-active-bar{padding:12px 16px;background:var(--green-dim);border:1px solid rgba(61,255,170,.15);border-radius:12px;margin-bottom:18px}
+.wm-active-lbl{font-size:7.5px;text-transform:uppercase;letter-spacing:.15em;color:var(--green);font-weight:700;margin-bottom:3px;font-family:var(--mono)}
+.wm-active-url{font-family:var(--mono);font-size:11.5px;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wm-active-meta{font-family:var(--mono);font-size:9.5px;color:var(--text3);margin-top:2px}
+.wm-url-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:7px;border:1px solid var(--border);background:var(--surface2);transition:border-color .2s}
+.wm-url-row.is-active{border-color:rgba(61,255,170,.3);background:var(--green-dim)}
+.wm-url-row.is-exhausted{border-color:rgba(255,80,80,.2);background:var(--red-dim);opacity:.6}
 .wm-url-row.is-idle:hover{border-color:var(--border2);cursor:pointer}
-.wm-badge{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.wm-badge.green{background:var(--green);box-shadow:0 0 7px rgba(61,255,160,.5);animation:pulse 2s ease-in-out infinite}
+.wm-badge{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.wm-badge.green{background:var(--green);box-shadow:0 0 7px rgba(61,255,170,.5);animation:pulse 2s ease-in-out infinite}
 .wm-badge.amber{background:var(--amber)}
 .wm-badge.red  {background:var(--red)}
 .wm-badge.grey {background:var(--text3)}
 .wm-info{flex:1;min-width:0}
-.wm-url-text{font-family:var(--mono);font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wm-url-tag{font-size:9px;margin-top:2px;font-family:var(--mono)}
+.wm-url-text{font-family:var(--mono);font-size:10.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wm-url-tag{font-size:8.5px;margin-top:2px;font-family:var(--mono)}
 .wm-url-tag.green{color:var(--green)}
 .wm-url-tag.amber{color:var(--amber)}
 .wm-url-tag.red  {color:var(--red)}
 .wm-url-tag.grey {color:var(--text3)}
-.wm-del{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 7px;border-radius:6px;color:var(--text3);transition:all .15s}
+.wm-del{background:none;border:none;cursor:pointer;font-size:11px;padding:3px 7px;border-radius:6px;color:var(--text3);transition:all .15s}
 .wm-del:hover{color:var(--red);background:var(--red-dim)}
-.wm-boxes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-.wm-box{width:24px;height:24px;border-radius:6px;border:1px solid transparent;position:relative;cursor:default;transition:transform .15s}
-.wm-box:hover{transform:scale(1.2);z-index:2}
-.wm-box.green{background:rgba(61,255,160,.15);border-color:rgba(61,255,160,.3)}
-.wm-box.amber{background:rgba(255,179,71,.15);border-color:rgba(255,179,71,.3)}
-.wm-box.red  {background:rgba(255,79,79,.12);border-color:rgba(255,79,79,.2)}
-.wm-box.grey {background:var(--surface2);border-color:var(--border)}
-.wm-box.idle-click{cursor:pointer}
-.wm-box-tip{position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:9px;color:var(--text);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10}
-.wm-box:hover .wm-box-tip{opacity:1}
-.wm-legend{display:flex;gap:12px;flex-wrap:wrap}
-.wm-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3);font-family:var(--mono)}
-.wm-leg-dot{width:7px;height:7px;border-radius:2px}
-.wm-leg-dot.amber{background:rgba(255,179,71,.6)}
-.wm-leg-dot.green{background:rgba(61,255,160,.6)}
-.wm-leg-dot.red  {background:rgba(255,79,79,.5)}
-.wm-leg-dot.grey {background:var(--text3)}
-.flux-model-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.flux-model-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 
-/* vault */
-.settings-wrap{max-width:680px}
-.key-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)}
+/* Keys */
+.key-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)}
 .key-indicator{display:flex;align-items:center;gap:10px}
-.key-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(61,255,160,.4)}
-.key-text{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.key-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(61,255,170,.4)}
+.key-text{font-family:var(--mono);font-size:11.5px;color:var(--text2)}
 .key-del{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text3);transition:all .15s}
 .key-del:hover{background:var(--red-dim);color:var(--red)}
-.key-empty{border:1.5px dashed var(--border);border-radius:14px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:.3;color:var(--text2);font-size:13px;font-weight:600}
-.key-empty svg{width:24px;height:24px}
-
-/* misc */
-.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
-.section-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:var(--text3);margin-bottom:12px;font-family:var(--mono)}
-.gap-list{display:flex;flex-direction:column;gap:8px}
-.hint-box{display:flex;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--mono)}
-.hint-box svg{color:var(--text3);width:13px;height:13px;flex-shrink:0;margin-top:1px}
+.key-empty{border:1.5px dashed var(--border);border-radius:14px;padding:36px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.3;color:var(--text2);font-size:12px;font-weight:600;text-align:center}
+.key-empty svg{width:22px;height:22px}
 .add-row{display:flex;gap:8px}
-
-.spinner{width:16px;height:16px;border:2px solid rgba(200,255,0,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-.spinner.sm{width:10px;height:10px;border-width:1.5px}
-.spinner.dark{border-color:rgba(0,0,0,.15);border-top-color:#000}
-
-/* toast */
-.notif{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);
-  background:var(--surface);color:var(--text);border:1px solid var(--border2);
-  border-radius:12px;padding:12px 20px;font-size:12px;font-weight:600;
-  z-index:9998;opacity:0;pointer-events:none;transition:all .3s;
-  display:flex;align-items:center;gap:8px;white-space:nowrap;max-width:90vw;
-  font-family:var(--mono);box-shadow:var(--shadow-lg);
-}
-.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.notif.success{background:var(--green-dim);color:var(--green);border-color:rgba(61,255,160,.2)}
-.notif.error  {background:var(--red-dim);color:var(--red);border-color:rgba(255,79,79,.2)}
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.hint-box{display:flex;gap:10px;padding:11px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--mono)}
+.hint-box svg{color:var(--text3);width:12px;height:12px;flex-shrink:0;margin-top:2px}
+.sync-pill{display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:100px;border:1px solid var(--border);font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono);color:var(--text2)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1.2s ease-in-out infinite}
+.sync-dot.synced {background:var(--green)}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
+<!-- ══════════════════════════════════
      AUTH SCREEN
-══════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div id="auth-screen">
+  <div class="auth-bg"></div>
   <div class="auth-wrap">
     <div class="auth-card">
-
       <div class="auth-logo">
         <div class="auth-logo-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
         </div>
         <div>
           <div class="auth-logo-name">Historian Engine</div>
           <div class="auth-logo-sub">Chronicle · FLUX Edition</div>
         </div>
       </div>
-
-      <!-- Greeting shown when username is known -->
       <div class="auth-greeting" id="auth-greeting" style="display:none">
         <div class="auth-greeting-avatar" id="auth-avatar">?</div>
         <div>
@@ -472,20 +578,14 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <div class="auth-greeting-sub">Enter your PIN to continue</div>
         </div>
       </div>
-
-      <!-- Mode switcher (only shown when username NOT yet known) -->
       <div class="auth-mode-switch" id="auth-mode-switch">
         <button class="auth-mode-btn active" onclick="setMode('login')">Login</button>
         <button class="auth-mode-btn" onclick="setMode('register')">Register</button>
       </div>
-
-      <!-- Username field (only shown when username NOT yet known) -->
       <div class="auth-field" id="username-field">
         <label class="auth-label">Username</label>
         <input class="auth-input" id="inp-username" type="text" placeholder="your_username" autocomplete="username" spellcheck="false"/>
       </div>
-
-      <!-- PIN row (always shown) -->
       <div class="auth-field">
         <label class="auth-label" id="pin-label">4-Digit PIN</label>
         <div class="pin-row">
@@ -496,49 +596,42 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         </div>
         <div class="pin-status" id="pin-status"></div>
       </div>
-
       <button class="auth-btn" id="auth-submit-btn" onclick="submitAuth()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         <span id="auth-btn-label">Enter Archive</span>
       </button>
-
       <div class="auth-err" id="auth-err"></div>
-
-      <!-- "Not you?" shown when username IS known -->
-      <div class="not-you" id="not-you-link" style="display:none" onclick="forgetUsername()">
-        Not <span id="not-you-name"></span>? Switch account
-      </div>
-
-      <div class="auth-hint" id="auth-hint">Your data is stored permanently in the cloud.<br/>Login from any device using your PIN.</div>
+      <div class="not-you" id="not-you-link" style="display:none" onclick="forgetUsername()">Not <span id="not-you-name"></span>? Switch account</div>
+      <div class="auth-hint" id="auth-hint">Your data is stored permanently in the cloud.</div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
+<!-- ══════════════════════════════════
      MAIN APP
-══════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div id="app">
+  <!-- NAV -->
   <nav class="nav">
     <div class="nav-logo">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
     </div>
-    <button class="nav-item active" data-tab="generate" onclick="switchTab('generate',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    <button class="nav-item active" data-tab="build" onclick="switchTab('build',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <span class="nav-label">Build</span>
     </button>
-    <button class="nav-item" data-tab="profiles" onclick="switchTab('profiles',this)">
+    <button class="nav-item" data-tab="guilds" onclick="switchTab('guilds',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>
       <span class="nav-label">Guilds</span>
     </button>
-    <button class="nav-item" data-tab="workers" onclick="switchTab('workers',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      <span class="nav-label">Workers</span>
-    </button>
-    <button class="nav-item" data-tab="vault" onclick="switchTab('vault',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-      <span class="nav-label">Vault</span>
+    <button class="nav-item" data-tab="settings" onclick="switchTab('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span class="nav-label">Settings</span>
     </button>
     <div class="nav-bottom">
+      <div class="sync-pill">
+        <div class="sync-dot" id="sync-dot"></div>
+      </div>
       <div class="nav-user" id="nav-user-btn" onclick="logout()">
         <span id="nav-user-initial">?</span>
         <div class="nav-user-tip" id="nav-user-tip">Logout</div>
@@ -546,131 +639,147 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     </div>
   </nav>
 
-  <main>
-    <div class="topbar">
-      <div class="topbar-left">
-        <div class="topbar-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-        </div>
-        <div>
-          <div class="topbar-title">Historian Engine</div>
-          <div class="topbar-sub">Chronicle Automation · FLUX Edition</div>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <div class="sync-pill">
-          <div class="sync-dot" id="sync-dot"></div>
-          <span id="sync-label">Cloud Ready</span>
-        </div>
-        <button class="btn btn-outline btn-sm" id="folder-btn" onclick="connectFolder()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-          <span id="folder-label">PC Folder</span>
-        </button>
-        <button class="btn btn-primary btn-sm" id="export-btn" style="display:none" onclick="exportAll()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Batch
-        </button>
-      </div>
-    </div>
+  <main style="margin-left:var(--nav-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden">
 
-    <!-- BUILD TAB -->
-    <div class="tab-panel active" id="tab-generate">
-      <div class="gen-grid">
-        <div class="card" style="height:fit-content">
-          <div class="card-title">Batch Configuration</div>
-          <div class="field">
-            <label class="lbl">Target Guild</label>
-            <select id="sel-profile"><option value="">Select a Page Guild...</option></select>
-          </div>
-          <div class="field">
-            <div class="upload-zone" onclick="document.getElementById('csv-input').click()">
-              <div class="upload-zone-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              </div>
-              <div>
-                <div style="font-size:12px;font-weight:700">Import Manifest</div>
-                <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">CSV or XLSX</div>
-              </div>
-              <div id="csv-badge" style="display:none" class="upload-badge">0 Subjects</div>
-            </div>
-            <input id="csv-input" type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSV(this)"/>
-          </div>
-          <div class="field">
-            <div class="toggle-row">
-              <button class="toggle" id="random-toggle" onclick="toggleRandom()"></button>
-              <div class="toggle-info">
-                <div class="toggle-title">Random Subject</div>
-                <div class="toggle-sub">Pick one random topic</div>
-              </div>
-            </div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="process-btn" onclick="processBatch()" style="flex:1" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Process Batch
-            </button>
-            <button class="btn btn-danger btn-sm" id="stop-btn" style="display:none" onclick="stopProcessing()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-            </button>
-            <button class="btn btn-success btn-sm" id="resume-btn" style="display:none" onclick="resumePending()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            </button>
-            <button class="btn btn-outline btn-sm" id="clear-btn" style="display:none" onclick="clearResults()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-            </button>
-          </div>
-          <div id="no-key-warn" style="display:none;margin-top:10px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">⚠ Add a Gemini API key in the Vault tab</div>
-          <div id="no-worker-warn" style="display:none;margin-top:6px;text-align:center;font-size:9px;color:var(--red);font-family:var(--mono)">⚠ No active FLUX Worker — check Workers tab</div>
-        </div>
-        <div>
-          <div class="feed" id="feed">
-            <div class="empty-feed" id="empty-feed">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-              Waiting for history to be written…
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- ══ BUILD TAB (CHAT) ══ -->
+    <div class="tab-panel active" id="tab-build" style="flex-direction:column">
 
-    <!-- GUILDS TAB -->
-    <div class="tab-panel" id="tab-profiles">
-      <div class="profiles-grid">
-        <div class="card">
-          <div class="card-title">Forge Guild</div>
-          <div class="field"><label class="lbl">Guild Alias</label><input type="text" id="new-profile-name" placeholder="e.g. Ancient Architect"/></div>
-          <div class="field">
-            <label class="lbl">Identity Sigil</label>
-            <div class="logo-picker" onclick="document.getElementById('logo-input').click()">
-              <img id="logo-preview" style="display:none"/>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="logo-placeholder"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            </div>
-            <input id="logo-input" type="file" accept="image/*" style="display:none" onchange="handleLogo(this)"/>
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </div>
-          <button class="btn btn-primary" style="width:100%" onclick="addProfile()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Register Guild
+          <div>
+            <div class="chat-title">Chronicle Builder</div>
+            <div class="chat-sub">AI-powered history post generator</div>
+          </div>
+        </div>
+        <div class="chat-controls">
+          <button class="btn btn-outline btn-sm" id="export-btn" style="display:none" onclick="exportAll()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-outline btn-sm" id="clear-chat-btn" style="display:none" onclick="clearChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            Clear
           </button>
         </div>
-        <div>
-          <div class="section-title">Active Guilds</div>
-          <div class="gap-list" id="guilds-list"><div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive.</div></div>
+      </div>
+
+      <!-- Context bar -->
+      <div class="chat-context-bar">
+        <div class="ctx-chip" id="folder-chip" onclick="connectFolder()">
+          <div class="ctx-chip-dot" id="folder-dot"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          <span id="folder-label">Connect PC Folder</span>
+        </div>
+        <div class="ctx-sep"></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:9.5px;font-family:var(--mono);color:var(--text3)">Guild:</div>
+        <select id="ctx-guild" style="width:auto;background:var(--surface3);border:1px solid var(--border2);padding:6px 30px 6px 12px;border-radius:100px;font-size:10px;font-family:var(--mono);color:var(--text2);cursor:pointer" onchange="updateCtxGuild()">
+          <option value="">Select guild...</option>
+        </select>
+        <div class="ctx-sep"></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:9.5px;font-family:var(--mono);color:var(--text3)">
+          <div id="key-status-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text3)"></div>
+          <span id="key-status-label">No API Key</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="chat-welcome-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+          </div>
+          <h3>Start the Chronicle</h3>
+          <p>Upload a CSV/XLSX file or type a topic directly. Tell me how many posts to generate.</p>
+          <div class="chat-welcome-chips">
+            <div class="cw-chip" onclick="setInput('Generate 10 posts about ancient Rome')">⚡ 10 posts · Ancient Rome</div>
+            <div class="cw-chip" onclick="setInput('Generate 5 posts about Egyptian Pharaohs')">🏺 5 posts · Egypt</div>
+            <div class="cw-chip" onclick="setInput('Generate 15 posts from the uploaded file')">📋 15 posts · from file</div>
+            <div class="cw-chip" onclick="setInput('Generate 20 posts about medieval Europe')">⚔️ 20 posts · Medieval</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="chat-input-area">
+        <div class="chat-hints" id="chat-hints">
+          <div class="chat-hint-pill" onclick="setInput('Generate 5 posts from the uploaded file')">5 posts</div>
+          <div class="chat-hint-pill" onclick="setInput('Generate 10 posts from the uploaded file')">10 posts</div>
+          <div class="chat-hint-pill" onclick="setInput('Generate 20 posts from the uploaded file')">20 posts</div>
+          <div class="chat-hint-pill" onclick="setInput('Generate 50 posts from the uploaded file')">50 posts</div>
+        </div>
+        <div class="chat-input-row">
+          <div class="chat-attach-zone">
+            <div class="chat-attach-btn" onclick="document.getElementById('file-input').click()" title="Attach CSV/XLSX">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div id="file-pill" style="display:none" class="chat-file-pill">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span id="file-pill-name">file.csv</span>
+              <span class="chat-file-pill-x" onclick="clearFile()">✕</span>
+            </div>
+          </div>
+          <textarea class="chat-textarea" id="chat-input" placeholder="Describe what to generate… e.g. 'Generate 10 posts about the Roman Empire'" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="chat-send-btn" id="chat-send-btn" onclick="handleSend()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <input id="file-input" type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(this)"/>
+      </div>
+    </div>
+
+    <!-- ══ GUILDS TAB ══ -->
+    <div class="tab-panel" id="tab-guilds" style="overflow-y:auto;padding:28px">
+      <div style="max-width:860px;margin:0 auto">
+        <div style="display:grid;grid-template-columns:320px 1fr;gap:24px">
+          <div class="card">
+            <div class="card-title">Forge Guild</div>
+            <div class="field"><label class="lbl">Guild Alias</label><input type="text" id="new-profile-name" placeholder="e.g. Ancient Architect"/></div>
+            <div class="field">
+              <label class="lbl">Identity Sigil</label>
+              <div class="logo-picker" onclick="document.getElementById('logo-input').click()">
+                <img id="logo-preview" style="display:none"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="logo-placeholder"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <input id="logo-input" type="file" accept="image/*" style="display:none" onchange="handleLogo(this)"/>
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="addProfile()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Register Guild
+            </button>
+          </div>
+          <div>
+            <div class="section-title">Active Guilds</div>
+            <div class="gap-list" id="guilds-list"><div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive.</div></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- WORKERS TAB -->
-    <div class="tab-panel" id="tab-workers">
-      <div class="wm-wrap">
-        <div class="card">
-          <div class="card-title">FLUX Worker Manager</div>
-          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">Add multiple Cloudflare Worker URLs. When one is exhausted, the engine auto-switches to the next.</p>
+    <!-- ══ SETTINGS TAB (Workers + Vault merged) ══ -->
+    <div class="tab-panel" id="tab-settings" style="overflow-y:auto;padding:28px">
+      <div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+        <!-- FLUX Workers -->
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <div class="settings-section-icon green">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div>
+              <div class="settings-section-title">FLUX Workers</div>
+              <div class="settings-section-sub">Cloudflare image generation endpoints</div>
+            </div>
+          </div>
           <div class="wm-active-bar">
             <div class="wm-active-lbl">Active Worker</div>
             <div class="wm-active-url" id="wm-active-url">—</div>
             <div class="wm-active-meta" id="wm-active-meta"></div>
           </div>
-          <div class="section-title">Image Generation Settings</div>
+          <div class="section-title">Image Settings</div>
           <div class="flux-model-row">
             <div>
               <label class="lbl">FLUX Model</label>
@@ -687,10 +796,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
               <label class="lbl">Steps — <span id="flux-steps-val">4</span></label>
               <input type="range" min="1" max="8" value="4" step="1" id="flux-steps"
                 oninput="document.getElementById('flux-steps-val').textContent=this.value;scheduleSync()"
-                style="width:100%;margin-top:10px;accent-color:var(--accent)"/>
+                style="width:100%;margin-top:14px;accent-color:var(--accent)"/>
             </div>
           </div>
-          <hr class="divider" style="margin:14px 0"/>
+          <div class="divider" style="margin:14px 0"></div>
           <div class="section-title">Worker URLs</div>
           <div id="wm-list" class="gap-list" style="margin-bottom:14px"></div>
           <label class="lbl">Add New Worker URL</label>
@@ -698,26 +807,20 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
             <input type="url" id="wm-inp" placeholder="https://flux.yourname.workers.dev/"/>
             <button class="btn btn-primary" onclick="wmAdd()" style="white-space:nowrap">+ Add</button>
           </div>
-          <div style="margin-top:22px">
-            <div class="section-title">Status</div>
-            <div class="wm-boxes" id="wm-boxes"></div>
-            <div class="wm-legend">
-              <div class="wm-leg"><div class="wm-leg-dot amber"></div>In Use</div>
-              <div class="wm-leg"><div class="wm-leg-dot green"></div>Available</div>
-              <div class="wm-leg"><div class="wm-leg-dot red"></div>Exhausted</div>
+        </div>
+
+        <!-- Gemini Vault -->
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <div class="settings-section-icon accent">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+            </div>
+            <div>
+              <div class="settings-section-title">Gemini API Vault</div>
+              <div class="settings-section-sub">Keys rotate automatically to balance quotas</div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VAULT TAB -->
-    <div class="tab-panel" id="tab-vault">
-      <div class="settings-wrap">
-        <div class="card">
-          <div class="card-title">Gemini API Vault</div>
-          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px">Gemini keys are stored in your personal cloud profile. They sync across all your devices when you login with your PIN.</p>
-          <div class="add-row" style="margin-bottom:16px">
+          <div class="add-row" style="margin-bottom:14px">
             <input type="password" id="new-key-input" placeholder="AIza..."/>
             <button class="btn btn-primary" onclick="addKey()" style="white-space:nowrap">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -726,13 +829,13 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <div class="gap-list" id="keys-list">
             <div class="key-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Vault is empty</div>
           </div>
-          <hr class="divider"/>
-          <div class="section-title">Notes</div>
+          <div class="divider"></div>
           <div class="gap-list">
-            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>Keys rotate automatically to balance quotas.</div>
-            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>Data syncs to GitHub Releases — login from any browser with your PIN.</div>
+            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>Keys rotate automatically to balance quotas.</div>
+            <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>Syncs to cloud — login from any device with your PIN.</div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -742,9 +845,9 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 <div class="notif" id="notif"></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-//  HARDCODED PROXY URL
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
+//  PROXY
+// ═══════════════════════════════════════
 const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/';
 
 async function proxyCall(action, body = {}) {
@@ -758,26 +861,21 @@ async function proxyCall(action, body = {}) {
   return data;
 }
 
-// ═══════════════════════════════════════════════════
-//  SESSION — username stored permanently, pin per-session
-// ═══════════════════════════════════════════════════
-// localStorage.historian_username → stays forever
-// sessionStorage.historian_pin   → cleared when browser closed (optional: use localStorage too)
-// We use localStorage for both so PIN auto-fills on reopen
-
-let currentUser = null; // { username, pin }
-
+// ═══════════════════════════════════════
+//  SESSION
+// ═══════════════════════════════════════
+let currentUser = null;
 function getSavedUsername() { return localStorage.getItem('historian_username') || ''; }
-function saveUsername(u)    { localStorage.setItem('historian_username', u); }
+function saveUsername(u) { localStorage.setItem('historian_username', u); }
 function forgetSavedUsername() { localStorage.removeItem('historian_username'); localStorage.removeItem('historian_pin'); }
-function getSavedPin()     { return localStorage.getItem('historian_pin') || ''; }
-function savePin(p)        { localStorage.setItem('historian_pin', p); }
+function getSavedPin() { return localStorage.getItem('historian_pin') || ''; }
+function savePin(p) { localStorage.setItem('historian_pin', p); }
 
-// ═══════════════════════════════════════════════════
-//  AUTH MODE
-// ═══════════════════════════════════════════════════
-let authMode = 'login'; // 'login' | 'register'
-let knownUsername = ''; // username saved in localStorage
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+let authMode = 'login';
+let knownUsername = '';
 
 function setMode(mode) {
   authMode = mode;
@@ -787,283 +885,178 @@ function setMode(mode) {
   document.getElementById('pin-label').textContent = mode==='register' ? 'Choose a 4-Digit PIN' : '4-Digit PIN';
   document.getElementById('auth-btn-label').textContent = mode==='register' ? 'Create Account' : 'Enter Archive';
   document.getElementById('auth-hint').textContent = mode==='register'
-    ? 'Remember your PIN — it must be unique. No recovery!'
-    : 'Your data is stored permanently in the cloud.';
-  clearPinStatus();
-  clearPinBoxes();
-  clearErr();
+    ? 'Remember your PIN — it must be unique. No recovery!' : 'Your data is stored permanently in the cloud.';
+  clearPinStatus(); clearPinBoxes(); clearErr();
 }
+function clearPinBoxes(){[0,1,2,3].forEach(i=>{const el=document.getElementById('p'+i);el.value='';el.classList.remove('filled');})}
+function clearPinStatus(){const el=document.getElementById('pin-status');el.textContent='';el.className='pin-status'}
+function clearErr(){const el=document.getElementById('auth-err');el.style.display='none';el.textContent=''}
+function showErr(msg){const el=document.getElementById('auth-err');el.textContent=msg;el.style.display='block'}
+function getPin(){return[0,1,2,3].map(i=>document.getElementById('p'+i).value).join('')}
 
-function clearPinBoxes() { [0,1,2,3].forEach(i=>{ const el=document.getElementById('p'+i); el.value=''; el.classList.remove('filled'); }); }
-function clearPinStatus() { const el=document.getElementById('pin-status'); el.textContent=''; el.className='pin-status'; }
-function clearErr() { const el=document.getElementById('auth-err'); el.style.display='none'; el.textContent=''; }
-function showErr(msg) { const el=document.getElementById('auth-err'); el.textContent=msg; el.style.display='block'; }
-
-function getPin() { return [0,1,2,3].map(i=>document.getElementById('p'+i).value).join(''); }
-
-// Setup PIN input UX
-;[0,1,2,3].forEach(i => {
-  const el = document.getElementById('p'+i);
-  el.addEventListener('input', () => {
-    el.classList.toggle('filled', !!el.value);
-    if (el.value && i < 3) document.getElementById('p'+(i+1)).focus();
-    if (getPin().length === 4 && authMode === 'register') checkPinAvailability();
-  });
-  el.addEventListener('keydown', e => {
-    if (e.key==='Backspace' && !el.value && i>0) document.getElementById('p'+(i-1)).focus();
-  });
+;[0,1,2,3].forEach(i=>{
+  const el=document.getElementById('p'+i);
+  el.addEventListener('input',()=>{el.classList.toggle('filled',!!el.value);if(el.value&&i<3)document.getElementById('p'+(i+1)).focus();if(getPin().length===4&&authMode==='register')checkPinAvailability();});
+  el.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!el.value&&i>0)document.getElementById('p'+(i-1)).focus();});
 });
 
-let pinCheckTimer = null;
-async function checkPinAvailability() {
-  const pin = getPin();
-  if (pin.length !== 4) return;
-  const statusEl = document.getElementById('pin-status');
-  statusEl.textContent = 'Checking…'; statusEl.className = 'pin-status check';
-  clearTimeout(pinCheckTimer);
-  pinCheckTimer = setTimeout(async () => {
-    try {
-      const res = await proxyCall('check_pin', { pin });
-      if (res.available) {
-        statusEl.textContent = '✓ PIN is available'; statusEl.className = 'pin-status ok';
-      } else {
-        statusEl.textContent = '✗ PIN already taken — choose another'; statusEl.className = 'pin-status taken';
-      }
-    } catch { statusEl.textContent = ''; statusEl.className = 'pin-status'; }
-  }, 400);
+let pinCheckTimer=null;
+async function checkPinAvailability(){
+  const pin=getPin();if(pin.length!==4)return;
+  const statusEl=document.getElementById('pin-status');statusEl.textContent='Checking…';statusEl.className='pin-status check';
+  clearTimeout(pinCheckTimer);pinCheckTimer=setTimeout(async()=>{
+    try{const res=await proxyCall('check_pin',{pin});if(res.available){statusEl.textContent='✓ PIN available';statusEl.className='pin-status ok';}else{statusEl.textContent='✗ PIN taken';statusEl.className='pin-status taken';}}catch{statusEl.textContent='';statusEl.className='pin-status';}
+  },400);
 }
 
-// ═══════════════════════════════════════════════════
-//  SHOW AUTH SCREEN (username-aware)
-// ═══════════════════════════════════════════════════
-function showAuthScreen() {
-  knownUsername = getSavedUsername();
-
-  if (knownUsername) {
-    // Username is saved — hide username field and mode switcher, show greeting
-    document.getElementById('auth-greeting').style.display = 'flex';
-    document.getElementById('auth-mode-switch').style.display = 'none';
-    document.getElementById('username-field').style.display = 'none';
-    document.getElementById('not-you-link').style.display = 'block';
-    document.getElementById('not-you-name').textContent = knownUsername;
-    document.getElementById('auth-avatar').textContent = knownUsername[0].toUpperCase();
-    document.getElementById('auth-greeting-name').textContent = `Welcome back, ${knownUsername}`;
-    document.getElementById('auth-btn-label').textContent = 'Enter Archive';
-    document.getElementById('auth-hint').textContent = 'Staying logged in on this browser.';
-    authMode = 'login';
-
-    // Try auto-fill saved PIN
-    const savedPin = getSavedPin();
-    if (savedPin && savedPin.length === 4) {
-      savedPin.split('').forEach((d, i) => {
-        const el = document.getElementById('p'+i);
-        el.value = d; el.classList.add('filled');
-      });
-      // Auto-login
-      submitAuth();
-    }
-  } else {
-    // No username saved — show full form
-    document.getElementById('auth-greeting').style.display = 'none';
-    document.getElementById('auth-mode-switch').style.display = 'flex';
-    document.getElementById('username-field').style.display = 'block';
-    document.getElementById('not-you-link').style.display = 'none';
+function showAuthScreen(){
+  knownUsername=getSavedUsername();
+  if(knownUsername){
+    document.getElementById('auth-greeting').style.display='flex';
+    document.getElementById('auth-mode-switch').style.display='none';
+    document.getElementById('username-field').style.display='none';
+    document.getElementById('not-you-link').style.display='block';
+    document.getElementById('not-you-name').textContent=knownUsername;
+    document.getElementById('auth-avatar').textContent=knownUsername[0].toUpperCase();
+    document.getElementById('auth-greeting-name').textContent=`Welcome back, ${knownUsername}`;
+    document.getElementById('auth-btn-label').textContent='Enter Archive';
+    authMode='login';
+    const savedPin=getSavedPin();
+    if(savedPin&&savedPin.length===4){savedPin.split('').forEach((d,i)=>{const el=document.getElementById('p'+i);el.value=d;el.classList.add('filled');});submitAuth();}
+  }else{
+    document.getElementById('auth-greeting').style.display='none';
+    document.getElementById('auth-mode-switch').style.display='flex';
+    document.getElementById('username-field').style.display='block';
+    document.getElementById('not-you-link').style.display='none';
     setMode('login');
   }
 }
+function forgetUsername(){forgetSavedUsername();knownUsername='';clearPinBoxes();clearPinStatus();clearErr();showAuthScreen();}
 
-function forgetUsername() {
-  forgetSavedUsername();
-  knownUsername = '';
-  clearPinBoxes();
-  clearPinStatus();
-  clearErr();
-  showAuthScreen();
+async function submitAuth(){
+  const btn=document.getElementById('auth-submit-btn');clearErr();
+  const username=knownUsername||document.getElementById('inp-username').value.trim().toLowerCase();
+  const pin=getPin();
+  if(!username){showErr('Enter a username.');return;}
+  if(pin.length!==4){showErr('Enter your 4-digit PIN.');return;}
+  btn.disabled=true;btn.innerHTML=`<span class="spinner dark sm"></span> ${authMode==='register'?'Creating…':'Entering…'}`;
+  try{
+    if(authMode==='register'){await proxyCall('register',{username,pin});}else{await proxyCall('login',{username,pin});}
+    saveUsername(username);savePin(pin);currentUser={username,pin};
+    await loadUserData();enterApp();
+    if(authMode==='register')notify(`✓ Welcome, ${username}!`,'success');
+  }catch(e){showErr(e.message||'Something went wrong.');}
+  btn.disabled=false;
+  btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span id="auth-btn-label">${authMode==='register'?'Create Account':'Enter Archive'}</span>`;
 }
 
-// ═══════════════════════════════════════════════════
-//  SUBMIT AUTH
-// ═══════════════════════════════════════════════════
-async function submitAuth() {
-  const btn = document.getElementById('auth-submit-btn');
-  clearErr();
-
-  const username = knownUsername || document.getElementById('inp-username').value.trim().toLowerCase();
-  const pin      = getPin();
-
-  if (!username)        { showErr('Enter a username.'); return; }
-  if (pin.length !== 4) { showErr('Enter your 4-digit PIN.'); return; }
-
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner dark sm"></span> ${authMode==='register'?'Creating…':'Entering…'}`;
-
-  try {
-    if (authMode === 'register') {
-      await proxyCall('register', { username, pin });
-    } else {
-      await proxyCall('login', { username, pin });
-    }
-
-    // Persist
-    saveUsername(username);
-    savePin(pin);
-    currentUser = { username, pin };
-
-    await loadUserData();
-    enterApp();
-
-    if (authMode === 'register') notify(`✓ Welcome, ${username}! Archive created.`, 'success');
-
-  } catch(e) {
-    showErr(e.message || 'Something went wrong.');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span id="auth-btn-label">${authMode==='register'?'Create Account':'Enter Archive'}</span>`;
-}
-
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  USER DATA
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 let userData = {
-  apiKeys: [], profiles: [], results: [],
-  workers: [{ url: 'https://flux.vmajibail.workers.dev/', status: 'active' }],
-  fluxModel: '@cf/black-forest-labs/flux-1-schnell', fluxSteps: 4
+  apiKeys:[],profiles:[],results:[],
+  workers:[{url:'https://flux.vmajibail.workers.dev/',status:'active'}],
+  fluxModel:'@cf/black-forest-labs/flux-1-schnell',fluxSteps:4
 };
-
-let syncTimer = null, isSyncing = false;
-
-function scheduleSync() { clearTimeout(syncTimer); setSyncState('dirty'); syncTimer = setTimeout(syncToCloud, 1800); }
-
-function setSyncState(s) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  if (!dot) return;
-  dot.className = 'sync-dot';
-  if (s==='dirty')   { dot.classList.add('syncing'); lbl.textContent='Unsaved…'; }
-  if (s==='syncing') { dot.classList.add('syncing'); lbl.textContent='Syncing…'; }
-  if (s==='synced')  { dot.classList.add('synced');  lbl.textContent='Cloud Synced'; }
-  if (s==='error')   { lbl.textContent='Sync Error'; }
+let syncTimer=null,isSyncing=false;
+function scheduleSync(){clearTimeout(syncTimer);setSyncState('dirty');syncTimer=setTimeout(syncToCloud,1800);}
+function setSyncState(s){
+  const dot=document.getElementById('sync-dot');const lbl=document.getElementById('sync-label');
+  if(!dot)return;dot.className='sync-dot';
+  if(s==='dirty'){dot.classList.add('syncing');}
+  if(s==='syncing'){dot.classList.add('syncing');}
+  if(s==='synced'){dot.classList.add('synced');}
+}
+async function syncToCloud(){
+  if(isSyncing||!currentUser)return;isSyncing=true;setSyncState('syncing');
+  try{
+    const safe=userData.results.map(r=>({...r,compositedImageUrl:r.compositedImageUrl?'[local]':'',imageUrl:r.imageUrl?'[local]':''}));
+    await proxyCall('save',{username:currentUser.username,pin:currentUser.pin,data:{...userData,results:safe}});setSyncState('synced');
+  }catch(e){setSyncState('error');console.error('Sync:',e);}
+  isSyncing=false;
+}
+async function loadUserData(){
+  try{const res=await proxyCall('load',{username:currentUser.username,pin:currentUser.pin});
+    if(res.data){userData={...userData,...res.data};userData.results=(userData.results||[]).map(r=>({...r,compositedImageUrl:r.compositedImageUrl==='[local]'?'':r.compositedImageUrl,imageUrl:r.imageUrl==='[local]'?'':r.imageUrl}));}}
+  catch(e){console.warn('Load failed:',e);}
 }
 
-async function syncToCloud() {
-  if (isSyncing || !currentUser) return;
-  isSyncing = true; setSyncState('syncing');
-  try {
-    const safeResults = userData.results.map(r => ({
-      ...r,
-      compositedImageUrl: r.compositedImageUrl ? '[local]' : '',
-      imageUrl: r.imageUrl ? '[local]' : ''
-    }));
-    await proxyCall('save', { username: currentUser.username, pin: currentUser.pin, data: { ...userData, results: safeResults } });
-    setSyncState('synced');
-  } catch(e) { setSyncState('error'); console.error('Sync:', e); }
-  isSyncing = false;
+function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  const ini=currentUser.username[0].toUpperCase();
+  document.getElementById('nav-user-initial').textContent=ini;
+  document.getElementById('nav-user-tip').textContent=`${currentUser.username} · logout`;
+  if(userData.fluxModel)document.getElementById('flux-model').value=userData.fluxModel;
+  if(userData.fluxSteps){document.getElementById('flux-steps').value=userData.fluxSteps;document.getElementById('flux-steps-val').textContent=userData.fluxSteps;}
+  renderAll();setSyncState('synced');updateCtxStatus();
+}
+function logout(){
+  if(!confirm('Logout? Your data is saved.'))return;
+  localStorage.removeItem('historian_pin');currentUser=null;
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  clearPinBoxes();clearPinStatus();clearErr();showAuthScreen();
 }
 
-async function loadUserData() {
-  try {
-    const res = await proxyCall('load', { username: currentUser.username, pin: currentUser.pin });
-    if (res.data) {
-      userData = { ...userData, ...res.data };
-      userData.results = (userData.results||[]).map(r => ({
-        ...r,
-        compositedImageUrl: r.compositedImageUrl==='[local]' ? '' : r.compositedImageUrl,
-        imageUrl: r.imageUrl==='[local]' ? '' : r.imageUrl
-      }));
-    }
-  } catch(e) { console.warn('Load failed:', e); }
-}
-
-function enterApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  const ini = currentUser.username[0].toUpperCase();
-  document.getElementById('nav-user-initial').textContent = ini;
-  document.getElementById('nav-user-tip').textContent = `${currentUser.username} · logout`;
-  if (userData.fluxModel) document.getElementById('flux-model').value = userData.fluxModel;
-  if (userData.fluxSteps) { document.getElementById('flux-steps').value=userData.fluxSteps; document.getElementById('flux-steps-val').textContent=userData.fluxSteps; }
-  renderAll(); setSyncState('synced');
-}
-
-function logout() {
-  if (!confirm('Logout? Your data is saved.')) return;
-  // Keep username saved but clear pin so they see PIN screen
-  localStorage.removeItem('historian_pin');
-  currentUser = null;
-  userData = { apiKeys:[], profiles:[], results:[], workers:[{url:'https://flux.vmajibail.workers.dev/',status:'active'}], fluxModel:'@cf/black-forest-labs/flux-1-schnell', fluxSteps:4 };
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  clearPinBoxes(); clearPinStatus(); clearErr();
-  showAuthScreen();
-}
-
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  NAV
-// ═══════════════════════════════════════════════════
-function switchTab(name, btn) {
+// ═══════════════════════════════════════
+function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
-  if (name==='workers') renderWorkers();
-  if (name==='generate') renderProfileSelect();
+  if(name==='settings')renderWorkers();
+  if(name==='guilds'){renderGuilds();}
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  TOAST
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 let notifTimer;
-function notify(msg, type='info') {
-  const el=document.getElementById('notif');
-  el.textContent=msg; el.className=`notif show ${type}`;
-  clearTimeout(notifTimer); notifTimer=setTimeout(()=>el.classList.remove('show'),3500);
+function notify(msg,type='info'){
+  const el=document.getElementById('notif');el.textContent=msg;el.className=`notif show ${type}`;
+  clearTimeout(notifTimer);notifTimer=setTimeout(()=>el.classList.remove('show'),3500);
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  API KEYS
-// ═══════════════════════════════════════════════════
-function addKey() {
-  const inp=document.getElementById('new-key-input');
-  const v=inp.value.trim();
-  if (!v||userData.apiKeys.includes(v)) return;
-  userData.apiKeys.push(v); inp.value='';
-  renderKeys(); updateWarnings(); scheduleSync();
+// ═══════════════════════════════════════
+function addKey(){
+  const inp=document.getElementById('new-key-input');const v=inp.value.trim();
+  if(!v||userData.apiKeys.includes(v))return;
+  userData.apiKeys.push(v);inp.value='';renderKeys();updateCtxStatus();scheduleSync();notify('✓ Key added','success');
 }
-document.getElementById('new-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')addKey()});
-function removeKey(i){userData.apiKeys.splice(i,1);renderKeys();updateWarnings();scheduleSync()}
+document.getElementById('new-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')addKey();});
+function removeKey(i){userData.apiKeys.splice(i,1);renderKeys();updateCtxStatus();scheduleSync();}
 function renderKeys(){
   const el=document.getElementById('keys-list');if(!el)return;
   if(!userData.apiKeys.length){el.innerHTML=`<div class="key-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Vault is empty</div>`;return;}
-  el.innerHTML=userData.apiKeys.map((k,i)=>`<div class="key-row"><div class="key-indicator"><div class="key-dot"></div><span class="key-text">AIza...${k.slice(-8)}</span></div><button class="key-del" onclick="removeKey(${i})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
+  el.innerHTML=userData.apiKeys.map((k,i)=>`<div class="key-row"><div class="key-indicator"><div class="key-dot"></div><span class="key-text">AIza...${k.slice(-8)}</span></div><button class="key-del" onclick="removeKey(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  WORKERS
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 function getWorkers(){return userData.workers||[]}
 function getActiveWorker(){return getWorkers().find(w=>w.status==='active')||null}
 function exhaustActive(){
   const i=getWorkers().findIndex(w=>w.status==='active');
   if(i>=0)userData.workers[i].status='exhausted';
   const ni=getWorkers().findIndex(w=>w.status==='idle');
-  if(ni>=0){userData.workers[ni].status='active';scheduleSync();renderWorkers();return true}
+  if(ni>=0){userData.workers[ni].status='active';scheduleSync();renderWorkers();return true;}
   scheduleSync();renderWorkers();return false;
 }
-
 async function fetchFluxImage(prompt){
   const model=document.getElementById('flux-model').value;
   const steps=parseInt(document.getElementById('flux-steps').value);
   userData.fluxModel=model;userData.fluxSteps=steps;
   for(let attempt=0;attempt<=getWorkers().length;attempt++){
     const aw=getActiveWorker();
-    if(!aw) throw new Error('All FLUX Workers exhausted. Add more in Workers tab.');
+    if(!aw)throw new Error('All FLUX Workers exhausted. Add more in Settings tab.');
     const res=await fetch(aw.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,model,width:1080,height:1080,steps})});
-    if(res.status===429){
-      let d={};try{d=await res.json();}catch{}
-      if(d.error==='DAILY_LIMIT'){const s=exhaustActive();if(!s)throw new Error('All Workers exhausted.');notify('⚡ Worker exhausted — switching…','info');continue;}
-      throw new Error('Rate limited. Try again shortly.');
-    }
+    if(res.status===429){let d={};try{d=await res.json();}catch{}if(d.error==='DAILY_LIMIT'){const s=exhaustActive();if(!s)throw new Error('All Workers exhausted.');notify('⚡ Worker exhausted — switching…','info');continue;}throw new Error('Rate limited.');}
     if(!res.ok){const t=await res.text();let e;try{e=JSON.parse(t);}catch{}throw new Error(e?.error||`Worker error ${res.status}`);}
     const ct=res.headers.get('content-type')||'';
     if(!ct.includes('image')){const t=await res.text();let e;try{e=JSON.parse(t);}catch{}throw new Error(e?.error||'Non-image response');}
@@ -1072,7 +1065,6 @@ async function fetchFluxImage(prompt){
   }
   throw new Error('Failed after all retries.');
 }
-
 function wmAdd(){
   let url=document.getElementById('wm-inp').value.trim();if(!url)return;
   if(!url.startsWith('http'))url='https://'+url;
@@ -1080,13 +1072,11 @@ function wmAdd(){
   if(getWorkers().some(w=>w.url===url)){notify('Already added','info');return;}
   const hasActive=getWorkers().some(w=>w.status==='active');
   userData.workers.push({url,status:hasActive?'idle':'active'});
-  scheduleSync();renderWorkers();document.getElementById('wm-inp').value='';
-  notify('✓ Worker added','success');updateWarnings();
+  scheduleSync();renderWorkers();document.getElementById('wm-inp').value='';notify('✓ Worker added','success');
 }
-document.getElementById('wm-inp').addEventListener('keydown',e=>{if(e.key==='Enter')wmAdd()});
-function wmDelete(i){const wa=getWorkers()[i].status==='active';userData.workers.splice(i,1);if(wa){const n=getWorkers().find(w=>w.status!=='exhausted');if(n)n.status='active';}scheduleSync();renderWorkers();updateWarnings();}
+document.getElementById('wm-inp').addEventListener('keydown',e=>{if(e.key==='Enter')wmAdd();});
+function wmDelete(i){const wa=getWorkers()[i].status==='active';userData.workers.splice(i,1);if(wa){const n=getWorkers().find(w=>w.status!=='exhausted');if(n)n.status='active';}scheduleSync();renderWorkers();}
 function wmActivate(i){userData.workers.forEach(w=>{if(w.status==='active')w.status='idle';});userData.workers[i].status='active';scheduleSync();renderWorkers();notify(`✓ Switched to worker ${i+1}`,'success');}
-
 function renderWorkers(){
   const ws=getWorkers(),aw=getActiveWorker(),avail=ws.filter(w=>w.status!=='exhausted').length;
   const u=document.getElementById('wm-active-url'),m=document.getElementById('wm-active-meta');
@@ -1101,19 +1091,11 @@ function renderWorkers(){
     const del=w.status!=='active'?`<button class="wm-del" onclick="event.stopPropagation();wmDelete(${i})">✕</button>`:'';
     return `<div class="wm-url-row ${cls}" ${click}><div class="wm-badge ${bc}"></div><div class="wm-info"><div class="wm-url-text">${w.url}</div><div class="wm-url-tag ${bc}">${tag}</div></div>${del}</div>`;
   }).join('');
-  const boxes=document.getElementById('wm-boxes');if(!boxes)return;
-  boxes.innerHTML=ws.map((w,i)=>{
-    const bc=w.status==='active'?'amber':w.status==='exhausted'?'red':'green';
-    const tip=`#${i+1} · ${w.status} · ${w.url.replace('https://','').slice(0,28)}`;
-    const cc=w.status==='idle'?'idle-click':'';
-    const cl=w.status==='idle'?`onclick="wmActivate(${i})"`:'';
-    return `<div class="wm-box ${bc} ${cc}" ${cl}><span class="wm-box-tip">${tip}</span></div>`;
-  }).join('');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  PROFILES
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 let pendingLogoUrl=null;
 function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onloadend=async()=>{const o=await resizeImage(r.result,100,100);pendingLogoUrl=o;document.getElementById('logo-preview').src=o;document.getElementById('logo-preview').style.display='block';document.getElementById('logo-placeholder').style.display='none';};r.readAsDataURL(f);}
 function resizeImage(dataUrl,w,h){return new Promise(resolve=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);resolve(c.toDataURL('image/png'));};i.src=dataUrl;});}
@@ -1124,57 +1106,280 @@ function addProfile(){
   document.getElementById('new-profile-name').value='';
   document.getElementById('logo-preview').style.display='none';
   document.getElementById('logo-placeholder').style.display='block';
-  pendingLogoUrl=null;renderGuilds();renderProfileSelect();scheduleSync();notify('✓ Guild registered!','success');
+  pendingLogoUrl=null;renderGuilds();renderCtxGuildSelect();scheduleSync();notify('✓ Guild registered!','success');
 }
-function removeProfile(id){userData.profiles=userData.profiles.filter(p=>p.id!==id);renderGuilds();renderProfileSelect();scheduleSync();}
+function removeProfile(id){userData.profiles=userData.profiles.filter(p=>p.id!==id);renderGuilds();renderCtxGuildSelect();scheduleSync();}
 function renderGuilds(){
   const el=document.getElementById('guilds-list');if(!el)return;
   if(!userData.profiles.length){el.innerHTML=`<div style="border:1.5px dashed var(--border);border-radius:14px;padding:40px;text-align:center;opacity:.3;font-size:13px;color:var(--text2)">Empty Archive.</div>`;return;}
-  el.innerHTML=userData.profiles.map(p=>`<div class="guild-card"><div class="guild-logo">${p.logoUrl?`<img src="${p.logoUrl}" alt=""/>`:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>'}</div><div class="guild-info"><div class="guild-name">${p.name}</div><div class="guild-id">UID: ${p.id}</div></div><button class="guild-del" onclick="removeProfile('${p.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
-}
-function renderProfileSelect(){
-  const sel=document.getElementById('sel-profile');if(!sel)return;
-  const cur=sel.value;sel.innerHTML='<option value="">Select a Page Guild...</option>';
-  if(userData.profiles.length){sel.innerHTML+='<option value="ALL">⚡ All active Guilds</option>';userData.profiles.forEach(p=>{sel.innerHTML+=`<option value="${p.id}">${p.name}</option>`;});}
-  sel.value=cur;updateProcessBtn();
+  el.innerHTML=userData.profiles.map(p=>`<div class="guild-card"><div class="guild-logo">${p.logoUrl?`<img src="${p.logoUrl}" alt=""/>`:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0110 0v1"/></svg>'}</div><div class="guild-info"><div class="guild-name">${p.name}</div><div class="guild-id">UID: ${p.id}</div></div><button class="guild-del" onclick="removeProfile('${p.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════
-//  CSV
-// ═══════════════════════════════════════════════════
-let csvData=[],pickRandom=false;
-function handleCSV(input){
+// ═══════════════════════════════════════
+//  CONTEXT BAR
+// ═══════════════════════════════════════
+function renderCtxGuildSelect(){
+  const sel=document.getElementById('ctx-guild');if(!sel)return;
+  const cur=sel.value;sel.innerHTML='<option value="">Select guild...</option>';
+  if(userData.profiles.length){sel.innerHTML+='<option value="ALL">⚡ All Guilds</option>';userData.profiles.forEach(p=>{sel.innerHTML+=`<option value="${p.id}">${p.name}</option>`;});}
+  sel.value=cur;
+}
+function updateCtxGuild(){}
+function updateCtxStatus(){
+  const hasKey=userData.apiKeys.length>0;
+  const dot=document.getElementById('key-status-dot');
+  const lbl=document.getElementById('key-status-label');
+  if(dot)dot.style.background=hasKey?'var(--green)':'var(--text3)';
+  if(lbl)lbl.textContent=hasKey?`${userData.apiKeys.length} Key${userData.apiKeys.length>1?'s':''} Ready`:'No API Key';
+}
+
+// ═══════════════════════════════════════
+//  FILE HANDLING
+// ═══════════════════════════════════════
+let csvData=[];
+let attachedFileName='';
+
+function handleFileUpload(input){
   const file=input.files[0];if(!file)return;
+  attachedFileName=file.name;
+  document.getElementById('file-pill-name').textContent=file.name;
+  document.getElementById('file-pill').style.display='flex';
   const ext=file.name.split('.').pop().toLowerCase();
-  if(ext==='xlsx'||ext==='xls'){const r=new FileReader();r.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvData=XLSX.utils.sheet_to_json(ws).map(r=>({topic:r.Topic||r.topic||r[Object.keys(r)[0]]})).filter(t=>t.topic);updateCSVBadge();notify(`Imported ${csvData.length} topics.`,'success');};r.readAsArrayBuffer(file);}
-  else{Papa.parse(file,{header:true,complete:r=>{csvData=r.data.map(row=>({topic:row.Topic||row.topic||row[Object.keys(row)[0]]})).filter(t=>t.topic);updateCSVBadge();notify(`Imported ${csvData.length} topics.`,'success');}});}
-  updateProcessBtn();
+  if(ext==='xlsx'||ext==='xls'){
+    const r=new FileReader();r.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvData=XLSX.utils.sheet_to_json(ws).map(r=>({topic:r.Topic||r.topic||r[Object.keys(r)[0]]})).filter(t=>t.topic);notify(`📋 Loaded ${csvData.length} topics from ${file.name}`,'success');};r.readAsArrayBuffer(file);
+  } else {
+    Papa.parse(file,{header:true,complete:r=>{csvData=r.data.map(row=>({topic:row.Topic||row.topic||row[Object.keys(row)[0]]})).filter(t=>t.topic);notify(`📋 Loaded ${csvData.length} topics from ${file.name}`,'success');}});
+  }
 }
-function updateCSVBadge(){const b=document.getElementById('csv-badge');b.textContent=csvData.length+' Subjects';b.style.display=csvData.length>0?'inline-block':'none';updateProcessBtn();}
-function toggleRandom(){pickRandom=!pickRandom;document.getElementById('random-toggle').classList.toggle('on',pickRandom);}
+function clearFile(){csvData=[];attachedFileName='';document.getElementById('file-pill').style.display='none';document.getElementById('file-input').value='';}
 
-// ═══════════════════════════════════════════════════
-//  UI STATE
-// ═══════════════════════════════════════════════════
-function updateProcessBtn(){
-  const hasKey=userData.apiKeys.length>0,hasCSV=csvData.length>0,hasW=!!getActiveWorker();
-  const btn=document.getElementById('process-btn');if(btn)btn.disabled=!(hasKey&&hasCSV&&hasW);
-  const nk=document.getElementById('no-key-warn'),nw=document.getElementById('no-worker-warn');
-  if(nk)nk.style.display=!hasKey?'block':'none';if(nw)nw.style.display=!hasW?'block':'none';
-}
-function updateWarnings(){updateProcessBtn();}
-let isProcessing=false,stopRequested=false;
-function setProcessing(on){
-  isProcessing=on;
-  const pb=document.getElementById('process-btn'),sb=document.getElementById('stop-btn'),rb=document.getElementById('resume-btn'),cb=document.getElementById('clear-btn'),eb=document.getElementById('export-btn');
-  if(pb)pb.disabled=on;if(sb)sb.style.display=on?'inline-flex':'none';if(rb)rb.style.display='none';
-  if(cb)cb.style.display=userData.results.length>0&&!on?'inline-flex':'none';
-  if(eb)eb.style.display=userData.results.some(r=>r.status==='done')?'inline-flex':'none';
+// ═══════════════════════════════════════
+//  CHAT ENGINE
+// ═══════════════════════════════════════
+let chatHistory=[]; // {role:'user'|'ai', content, cards:[]}
+let isProcessing=false;
+let stopRequested=false;
+let currentProgressMsgId=null;
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function setInput(text){document.getElementById('chat-input').value=text;document.getElementById('chat-input').focus();}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}}
+
+async function handleSend(){
+  if(isProcessing){stopRequested=true;return;}
+  const inp=document.getElementById('chat-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';autoResize(inp);
+
+  // Hide welcome
+  const wc=document.getElementById('chat-welcome');
+  if(wc)wc.style.display='none';
+
+  // Show user bubble
+  addChatBubble('user',text);
+
+  // Parse command
+  const cmd=parseCommand(text);
+  if(!cmd){
+    addChatBubble('ai',"I didn't quite understand that. Try something like: **Generate 10 posts about the Roman Empire** or attach a CSV and say **Generate 15 posts from the uploaded file**.");
+    return;
+  }
+
+  // Validate
+  const guild=getSelectedGuild();
+  if(!guild){addChatBubble('ai','⚠️ Please select a Guild from the context bar above before generating posts.');return;}
+  if(!userData.apiKeys.length){addChatBubble('ai','⚠️ No Gemini API key found. Head to **Settings → Gemini Vault** to add one.');return;}
+  if(!getActiveWorker()){addChatBubble('ai','⚠️ No active FLUX Worker. Add one in **Settings → FLUX Workers**.');return;}
+
+  let topics=[];
+  if(cmd.fromFile){
+    if(!csvData.length){addChatBubble('ai','⚠️ No file attached. Click the 📎 button to attach a CSV or XLSX file.');return;}
+    topics=csvData.slice(0,cmd.count);
+    if(topics.length<cmd.count)addChatBubble('ai',`ℹ️ Your file has ${csvData.length} topics — generating ${csvData.length} posts.`);
+  } else {
+    topics=cmd.topics.slice(0,cmd.count);
+  }
+
+  if(!topics.length){addChatBubble('ai','⚠️ No topics found to generate posts for.');return;}
+
+  // AI confirm bubble
+  const targetProfiles=guild==='ALL'?userData.profiles:userData.profiles.filter(p=>p.id===guild);
+  const totalPosts=topics.length*targetProfiles.length;
+  addChatBubble('ai',`✅ Got it! Generating **${totalPosts} post${totalPosts>1?'s':''}** across **${targetProfiles.length} guild${targetProfiles.length>1?'s':''}**. This may take a few minutes — I'll update you as each post is completed.`);
+
+  // Build result queue
+  const newResults=[];
+  for(const profile of targetProfiles){
+    for(const t of topics){
+      newResults.push({id:Math.random().toString(36).substr(2,9),topic:t.topic||t,shortText:'',longText:'',imageUrl:'',compositedImageUrl:'',pageProfileId:profile.id,status:'pending'});
+    }
+  }
+  userData.results=[...newResults,...userData.results];scheduleSync();
+
+  // Progress message
+  const progressId='prog-'+Math.random().toString(36).substr(2,6);
+  addProgressBubble(progressId,newResults);
+  currentProgressMsgId=progressId;
+
+  // Send button → stop mode
+  isProcessing=true;stopRequested=false;
+  const sendBtn=document.getElementById('chat-send-btn');
+  sendBtn.classList.add('stop-mode');
+  sendBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+
+  // Process
+  let done=0,errors=0;
+  for(const res of newResults){
+    if(stopRequested)break;
+    try{
+      updateProgressItem(progressId,res.id,'active');
+      await processOne(res);
+      done++;
+      updateProgressItem(progressId,res.id,'done');
+      updateProgressBar(progressId,done+errors,newResults.length);
+      // Show result card inline
+      const resultRes=userData.results.find(r=>r.id===res.id);
+      if(resultRes)appendResultCard(progressId,resultRes);
+    }catch(e){
+      errors++;
+      userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r);
+      scheduleSync();
+      updateProgressItem(progressId,res.id,'error');
+      updateProgressBar(progressId,done+errors,newResults.length);
+    }
+  }
+
+  // Done
+  isProcessing=false;
+  sendBtn.classList.remove('stop-mode');
+  sendBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+
+  const summary=stopRequested?`⏹ Stopped. Completed ${done} of ${newResults.length} posts.`:`🎉 All done! **${done} post${done!==1?'s':''} generated**${errors>0?`, ${errors} failed`:''}. ${exportDirHandle?'Auto-saved to your PC folder!':'Click Export to download as ZIP.'}`;
+  addChatBubble('ai',summary);
+
+  document.getElementById('export-btn').style.display='inline-flex';
+  document.getElementById('clear-chat-btn').style.display='inline-flex';
+  scrollChat();
 }
 
-// ═══════════════════════════════════════════════════
+function parseCommand(text){
+  const lower=text.toLowerCase();
+  // Extract count
+  const countMatch=lower.match(/(\d+)\s+posts?/);
+  const count=countMatch?parseInt(countMatch[1]):10;
+  // From file?
+  const fromFile=lower.includes('from')&&(lower.includes('file')||lower.includes('csv')||lower.includes('upload')||csvData.length>0);
+  // Extract topic(s) if not from file
+  let topics=[];
+  if(!fromFile){
+    // Try to extract "about X" or "on X"
+    const aboutMatch=text.match(/(?:about|on|regarding|for)\s+(.+?)(?:\s*$|\s+in\s+|\s+from\s+)/i);
+    if(aboutMatch){topics=[{topic:aboutMatch[1].trim()}];}
+    else if(csvData.length>0){return{count,fromFile:true,topics:[]};}
+    else{return null;}
+  }
+  return{count,fromFile,topics};
+}
+
+function getSelectedGuild(){
+  return document.getElementById('ctx-guild').value||'';
+}
+
+// ═══════════════════════════════════════
+//  CHAT BUBBLES
+// ═══════════════════════════════════════
+function addChatBubble(role,content){
+  const msgs=document.getElementById('chat-messages');
+  const id='msg-'+Math.random().toString(36).substr(2,6);
+  const ini=role==='user'?(currentUser?currentUser.username[0].toUpperCase():'U'):'H';
+  const avCls=role==='user'?'user':'ai';
+  const formatted=content.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  const div=document.createElement('div');
+  div.id=id;div.className=`msg ${role}`;
+  div.innerHTML=`<div class="msg-avatar ${avCls}">${ini}</div><div class="msg-body"><div class="msg-bubble">${formatted}</div><div class="msg-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  msgs.appendChild(div);scrollChat();return id;
+}
+
+function addProgressBubble(progressId,results){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.id=progressId;div.className='msg ai';
+  const itemsHTML=results.map(r=>`<div class="progress-item" id="pi-${r.id}"><div class="progress-item-dot"></div><span>${r.topic.length>45?r.topic.slice(0,45)+'…':r.topic}</span></div>`).join('');
+  div.innerHTML=`<div class="msg-avatar ai">H</div>
+    <div class="msg-body" style="max-width:500px">
+      <div class="progress-bubble">
+        <div class="progress-title"><span class="spinner sm"></span> Processing ${results.length} posts…</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="pb-${progressId}" style="width:0%"></div></div>
+        <div class="progress-items" id="pi-list-${progressId}" style="max-height:200px;overflow-y:auto">${itemsHTML}</div>
+      </div>
+      <div class="chat-result-grid" id="cards-${progressId}"></div>
+    </div>`;
+  msgs.appendChild(div);scrollChat();
+}
+
+function updateProgressBar(progressId,done,total){
+  const pb=document.getElementById(`pb-${progressId}`);
+  if(pb)pb.style.width=`${Math.round((done/total)*100)}%`;
+  const title=document.querySelector(`#${progressId} .progress-title`);
+  if(title){
+    if(done>=total){title.innerHTML=`✓ Complete — ${done} posts generated`;}
+    else{title.innerHTML=`<span class="spinner sm"></span> Processing… ${done}/${total}`;}
+  }
+}
+function updateProgressItem(progressId,resId,state){
+  const el=document.getElementById(`pi-${resId}`);
+  if(!el)return;
+  el.className=`progress-item ${state}`;
+  if(state==='done')el.querySelector('.progress-item-dot').style.background='var(--green)';
+  if(state==='error')el.querySelector('.progress-item-dot').style.background='var(--red)';
+  if(state==='active')el.querySelector('.progress-item-dot').style.background='var(--amber)';
+}
+function appendResultCard(progressId,res){
+  const grid=document.getElementById(`cards-${progressId}`);
+  if(!grid)return;
+  const profile=userData.profiles.find(p=>p.id===res.pageProfileId);
+  const card=document.createElement('div');
+  card.className='chat-result-card';card.id='crc-'+res.id;
+  const imgContent=res.compositedImageUrl
+    ?`<img src="${res.compositedImageUrl}" alt="${res.topic}" style="width:100%;height:100%;object-fit:cover"/>`
+    :`<div class="crc-img-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+  const shortClean=res.shortText.replace(/<yellow>(.*?)<\/yellow>/g,'<span style="color:#FFD700;font-weight:800">$1</span>');
+  card.innerHTML=`<div class="crc-img">${imgContent}</div>
+    <div class="crc-body">
+      <div class="crc-guild">${profile?.logoUrl?`<img src="${profile.logoUrl}" alt=""/>`:''}<span>${profile?.name||'Unknown'}</span></div>
+      <div class="crc-topic">${res.topic}</div>
+      <div class="crc-caption">${shortClean}</div>
+      <div class="crc-long">${res.longText}</div>
+      <div class="crc-actions">
+        ${res.compositedImageUrl?`<div class="crc-btn" onclick="downloadSingle('${res.id}')">⬇ Image</div>`:''}
+        <div class="crc-btn" onclick="copyText('${res.id}')">📋 Copy Text</div>
+      </div>
+    </div>`;
+  grid.appendChild(card);scrollChat();
+}
+
+function scrollChat(){
+  const msgs=document.getElementById('chat-messages');
+  if(msgs)msgs.scrollTop=msgs.scrollHeight;
+}
+
+function clearChat(){
+  if(!confirm('Clear all chat history and results?'))return;
+  userData.results=[];scheduleSync();
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML='';
+  const wc=document.createElement('div');wc.className='chat-welcome';wc.id='chat-welcome';
+  wc.innerHTML=`<div class="chat-welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></div><h3>Start the Chronicle</h3><p>Upload a CSV/XLSX file or type a topic directly. Tell me how many posts to generate.</p><div class="chat-welcome-chips"><div class="cw-chip" onclick="setInput('Generate 10 posts about ancient Rome')">⚡ 10 posts · Ancient Rome</div><div class="cw-chip" onclick="setInput('Generate 5 posts about Egyptian Pharaohs')">🏺 5 posts · Egypt</div><div class="cw-chip" onclick="setInput('Generate 15 posts from the uploaded file')">📋 15 posts · from file</div><div class="cw-chip" onclick="setInput('Generate 20 posts about medieval Europe')">⚔️ 20 posts · Medieval</div></div>`;
+  msgs.appendChild(wc);
+  document.getElementById('export-btn').style.display='none';
+  document.getElementById('clear-chat-btn').style.display='none';
+  notify('Cleared.','info');
+}
+
+// ═══════════════════════════════════════
 //  GEMINI
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 async function callGemini(apiKey,prompt){
   const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
   const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}]})});
@@ -1182,9 +1387,9 @@ async function callGemini(apiKey,prompt){
   const data=await res.json();return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  COMPOSITE
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 function compositeImage(base64Img,shortText,logoUrl){
   return new Promise(resolve=>{
     const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
@@ -1209,12 +1414,13 @@ function compositeImage(base64Img,shortText,logoUrl){
   });
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  PROCESS ONE
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 async function processOne(res){
   const profile=userData.profiles.find(p=>p.id===res.pageProfileId);if(!profile)return;
-  updateResultStatus(res.id,'processing');await sleep(500);
+  userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'processing'}:r);
+  await sleep(300);
   const prompt=`You are a history content author for high-engagement Facebook posts for the page "${profile.name}".
 Topic: ${res.topic}
 
@@ -1231,89 +1437,66 @@ Return ONLY valid raw JSON (no markdown):
   try{base64Img=await fetchFluxImage(imgPrompt);}catch(e){throw new Error('Image generation failed: '+e.message);}
   const composited=await compositeImage(base64Img,textData.short,profile.logoUrl);
   userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'done',shortText:textData.short,longText:textData.long,imageUrl:`data:image/png;base64,${base64Img}`,compositedImageUrl:composited}:r);
-  scheduleSync();renderResult(res.id);
-  if(exportDirHandle){try{const fn=profile.name.replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(fn,{create:true});let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}const next=max+1;const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(composited).then(r=>r.blob()));await iW.close();const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(textData.long||'');await tW.close();}catch(e){console.error('Auto-save:',e);}}
+  scheduleSync();
+  // Auto-save to folder
+  if(exportDirHandle){
+    try{
+      const fn=profile.name.replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(fn,{create:true});
+      let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}
+      const next=max+1;
+      const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(composited).then(r=>r.blob()));await iW.close();
+      const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(textData.long||'');await tW.close();
+    }catch(e){console.error('Auto-save:',e);}
+  }
 }
 
-// ═══════════════════════════════════════════════════
-//  BATCH
-// ═══════════════════════════════════════════════════
-async function processBatch(){
-  if(isProcessing)return;
-  if(!csvData.length){notify('Import a CSV/XLSX first.','error');return;}
-  if(!userData.apiKeys.length){notify('Add a Gemini API key in Vault.','error');return;}
-  if(!getActiveWorker()){notify('No active FLUX Worker.','error');return;}
-  const selId=document.getElementById('sel-profile').value;
-  if(!selId){notify('Select a Guild.','error');return;}
-  const targetProfiles=selId==='ALL'?userData.profiles:userData.profiles.filter(p=>p.id===selId);
-  if(!targetProfiles.length){notify('No Guild found.','error');return;}
-  let topics=[...csvData];if(pickRandom)topics=[csvData[Math.floor(Math.random()*csvData.length)]];
-  const newResults=[];
-  for(const profile of targetProfiles)for(const t of topics)newResults.push({id:Math.random().toString(36).substr(2,9),topic:t.topic,shortText:'',longText:'',imageUrl:'',compositedImageUrl:'',pageProfileId:profile.id,status:'pending'});
-  userData.results=[...newResults,...userData.results];scheduleSync();renderFeed();setProcessing(true);stopRequested=false;
-  for(const res of newResults){if(stopRequested)break;try{await processOne(res);}catch(e){userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r);scheduleSync();renderResult(res.id);}}
-  setProcessing(false);updateButtons();
-  if(!stopRequested)notify('Batch completed!','success');else notify('Stopped.','info');
+// ═══════════════════════════════════════
+//  INDIVIDUAL ACTIONS
+// ═══════════════════════════════════════
+function downloadSingle(resId){
+  const res=userData.results.find(r=>r.id===resId);if(!res||!res.compositedImageUrl)return;
+  const a=document.createElement('a');a.href=res.compositedImageUrl;a.download=`${res.topic.replace(/[^a-z0-9]/gi,'_').slice(0,30)}.jpg`;a.click();
 }
-async function resumePending(){
-  const toResume=userData.results.filter(r=>r.status==='pending'||r.status==='error');if(!toResume.length){notify('Nothing to resume.','info');return;}
-  setProcessing(true);stopRequested=false;
-  for(const res of toResume){if(stopRequested)break;try{await processOne(res);}catch(e){userData.results=userData.results.map(r=>r.id===res.id?{...r,status:'error',error:e.message}:r);scheduleSync();renderResult(res.id);}}
-  setProcessing(false);updateButtons();notify('Resume complete.','success');
-}
-function stopProcessing(){stopRequested=true;}
-function clearResults(){if(!confirm('Clear all history?'))return;userData.results=[];scheduleSync();renderFeed();updateButtons();notify('Cleared.','info');}
-function updateButtons(){
-  const hD=userData.results.some(r=>r.status==='done'),hP=userData.results.some(r=>r.status==='pending'||r.status==='error');
-  const eb=document.getElementById('export-btn'),rb=document.getElementById('resume-btn'),cb=document.getElementById('clear-btn');
-  if(eb)eb.style.display=hD?'inline-flex':'none';if(rb)rb.style.display=hP&&!isProcessing?'inline-flex':'none';if(cb)cb.style.display=userData.results.length>0&&!isProcessing?'inline-flex':'none';
+function copyText(resId){
+  const res=userData.results.find(r=>r.id===resId);if(!res)return;
+  navigator.clipboard.writeText(res.longText||'').then(()=>notify('✓ Text copied!','success'));
 }
 
-// ═══════════════════════════════════════════════════
-//  FEED
-// ═══════════════════════════════════════════════════
-function renderFeed(){
-  const feed=document.getElementById('feed');if(!feed)return;
-  const emptyEl=document.getElementById('empty-feed');if(emptyEl)emptyEl.style.display=userData.results.length===0?'flex':'none';
-  const ids=new Set(userData.results.map(r=>r.id));
-  feed.querySelectorAll('.result-card').forEach(c=>{if(!ids.has(c.dataset.id))c.remove();});
-  userData.results.forEach(r=>{
-    if(!document.querySelector(`[data-id="${r.id}"]`)){const el=document.createElement('div');el.className='result-card';el.dataset.id=r.id;el.innerHTML=buildCardHTML(r);feed.insertBefore(el,feed.querySelector('.result-card')||emptyEl);}
-  });
-}
-function renderResult(id){const res=userData.results.find(r=>r.id===id);if(!res)return;const el=document.querySelector(`[data-id="${id}"]`);if(!el)return;el.innerHTML=buildCardHTML(res);const e=document.getElementById('empty-feed');if(e)e.style.display='none';}
-function updateResultStatus(id,status){userData.results=userData.results.map(r=>r.id===id?{...r,status}:r);renderResult(id);}
-function buildCardHTML(res){
-  const profile=userData.profiles.find(p=>p.id===res.pageProfileId);
-  const badge={done:`<span class="badge badge-done">Archived</span>`,processing:`<span class="badge badge-processing"><span class="spinner sm"></span> Forging</span>`,error:`<span class="badge badge-error">Error</span>`,pending:`<span class="badge badge-pending">Pending</span>`}[res.status]||'';
-  const imgCol=res.status==='processing'?`<div class="result-img-placeholder"><span class="spinner"></span><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-top:8px;color:var(--text3);font-family:var(--mono)">Rendering…</div></div>`:res.status==='done'&&res.compositedImageUrl?`<img src="${res.compositedImageUrl}" alt="${res.topic}"/>`:`<div class="result-img-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
-  const content=res.status==='done'?`<div class="overlay-box"><div class="overlay-label">Overlay Caption</div><div class="overlay-text">${res.shortText.replace(/<yellow>(.*?)<\/yellow>/g,'<span style="color:#FFD700;font-weight:800">$1</span>')}</div></div><div><div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Social Chronicle</div><div class="long-text-box"><p>${res.longText}</p></div></div>`:res.status==='error'?`<div class="error-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-title">Error</div><div class="error-msg">${res.error||'Unknown'}</div></div></div>`:'';
-  return `<div class="result-inner"><div class="result-img-col">${imgCol}</div><div class="result-content"><div class="result-header"><div><div class="result-guild">${profile?.logoUrl?`<img src="${profile.logoUrl}" alt=""/>`:''}  <span class="result-guild-name">${profile?.name||'Unknown'}</span></div><div class="result-topic">${res.topic}</div></div>${badge}</div>${content}</div></div>`;
-}
-
-// ═══════════════════════════════════════════════════
-//  PC FOLDER / EXPORT
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
+//  PC FOLDER & EXPORT
+// ═══════════════════════════════════════
 let exportDirHandle=null;
 async function connectFolder(){
-  if(!('showDirectoryPicker'in window)){notify('Use Chrome or Edge.','error');return;}
-  try{exportDirHandle=await window.showDirectoryPicker({mode:'readwrite'});document.getElementById('folder-label').textContent='Folder ✓';document.getElementById('folder-btn').className='btn btn-success btn-sm';notify('PC Folder active!','success');}catch(e){if(e.name!=='AbortError')notify('Folder failed.','error');}
+  if(!('showDirectoryPicker'in window)){notify('Use Chrome or Edge for folder access.','error');return;}
+  try{
+    exportDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
+    document.getElementById('folder-label').textContent='Folder Connected ✓';
+    document.getElementById('folder-chip').classList.add('active');
+    document.getElementById('folder-dot').classList.add('green');
+    notify('✓ PC Folder connected! Posts will auto-save.','success');
+  }catch(e){if(e.name!=='AbortError')notify('Folder access failed.','error');}
 }
 async function exportAll(){
   const done=userData.results.filter(r=>r.status==='done');if(!done.length)return;
-  if(exportDirHandle){for(const res of done){try{const pn=(userData.profiles.find(p=>p.id===res.pageProfileId)?.name||'Misc').replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(pn,{create:true});let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}const next=max+1;const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(res.compositedImageUrl).then(r=>r.blob()));await iW.close();const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(res.longText);await tW.close();}catch(e){console.error(e);}}notify('Exported to PC folder!','success');return;}
+  if(exportDirHandle){
+    for(const res of done){try{const pn=(userData.profiles.find(p=>p.id===res.pageProfileId)?.name||'Misc').replace(/[^a-z0-9]/gi,'_');const folder=await exportDirHandle.getDirectoryHandle(pn,{create:true});let max=0;for await(const e of folder.values()){if(e.kind==='file'){const n=parseInt(e.name);if(!isNaN(n)&&n>max)max=n;}}const next=max+1;const iF=await folder.getFileHandle(`${next}.jpg`,{create:true});const iW=await iF.createWritable();await iW.write(await fetch(res.compositedImageUrl).then(r=>r.blob()));await iW.close();const tF=await folder.getFileHandle(`${next}.txt`,{create:true});const tW=await tF.createWritable();await tW.write(res.longText);await tW.close();}catch(e){console.error(e);}}
+    notify('Exported to PC folder!','success');return;
+  }
   const zip=new JSZip();
   for(const res of done){const pn=(userData.profiles.find(p=>p.id===res.pageProfileId)?.name||'Misc').replace(/[^a-z0-9]/gi,'_');const bn=res.topic.replace(/[^a-z0-9]/gi,'_').substring(0,30);const folder=zip.folder(pn);if(res.compositedImageUrl)folder.file(`${bn}.jpg`,res.compositedImageUrl.split(',')[1],{base64:true});folder.file(`${bn}.txt`,res.longText);}
   const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`History_Archive_${new Date().toISOString().slice(0,10)}.zip`;a.click();notify('ZIP downloaded!','success');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════
 //  RENDER ALL + INIT
-// ═══════════════════════════════════════════════════
-function renderAll(){renderKeys();renderGuilds();renderProfileSelect();renderWorkers();renderFeed();updateButtons();updateWarnings();}
+// ═══════════════════════════════════════
+function renderAll(){
+  renderKeys();renderGuilds();renderCtxGuildSelect();renderWorkers();
+  updateCtxStatus();
+}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ── BOOT ──
+// BOOT
 showAuthScreen();
 </script>
 </body>
