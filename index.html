@@ -3,73 +3,81 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Historian Engine — Command Center</title>
+<title>Historian Engine — PIN Archive</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg: #0c0c0f; --surface: #14141a; --surface2: #1c1c24; --border: rgba(255,255,255,0.08);
-  --accent: #c8ff00; --text: #f0f0f5; --text2: #7a7a90; --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
+  --bg: #0c0c0f; --surface: #111116; --surface2: #18181f; --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13); --text: #f0f0f5; --text2: #7a7a90; --text3: #4a4a60;
+  --accent: #c8ff00; --red: #ff4f4f; --red-dim: rgba(255,79,79,0.12); --green: #3dffa0;
+  --green-dim:rgba(61,255,160,0.1); --amber: #ffb347; --radius: 18px; --radius-sm:10px;
+  --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace; --nav-w: 80px;
 }
-* { box-sizing: border-box; }
-body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
 
 /* AUTH SCREEN */
-#auth-screen { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9000; }
-.auth-card { background:var(--surface); padding:40px; border-radius:30px; width:360px; text-align:center; border:1px solid var(--border); }
-.pin-digit { width:52px; height:68px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; color:var(--accent); font-size:32px; text-align:center; margin:0 4px; outline:none; font-family: var(--mono); }
+#auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:28px;padding:44px 48px;width:100%;max-width:400px;text-align:center;box-shadow:0 10px 50px rgba(0,0,0,0.7)}
+.auth-logo-icon{width:50px;height:50px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#000}
+.auth-mode-switch{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:28px}
+.auth-mode-btn{flex:1;padding:10px;border:none;background:none;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border-radius:9px}
+.auth-mode-btn.active{background:var(--surface);color:var(--text)}
+.pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px}
+.pin-digit{background:var(--surface2);border:1px solid var(--border);border-radius:12px;height:64px;font-size:28px;font-weight:800;text-align:center;color:var(--text);font-family:var(--mono);outline:none;width:100%}
+.pin-digit.filled{border-color:var(--accent);color:var(--accent)}
+.pin-status{font-size:10px;font-family:var(--mono);height:20px;margin-bottom:10px}
+.auth-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:12px;padding:16px;font-weight:800;text-transform:uppercase;cursor:pointer;transition:0.2s}
+.auth-btn:disabled{opacity:0.4;cursor:not-allowed}
+.auth-err{margin-top:15px;background:var(--red-dim);color:var(--red);padding:10px;border-radius:10px;font-size:11px;display:none}
 
-/* LAYOUT */
-#app { display:none; grid-template-columns: 1fr 450px; height: 100vh; width: 100vw; }
-@media (max-width: 1000px) { #app { grid-template-columns: 1fr; } .settings-panel { display: none; } }
+/* MAIN APP */
+#app{display:none;width:100%}
+.nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;position:fixed;height:100vh}
+.nav-item{width:60px;margin-bottom:10px;padding:12px 0;border-radius:12px;cursor:pointer;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:5px;border:none;background:none}
+.nav-item.active{background:rgba(200,255,0,0.1);color:var(--accent)}
+.nav-label{font-size:8px;font-weight:700;text-transform:uppercase;font-family:var(--mono)}
+main{margin-left:var(--nav-w);flex:1;padding:24px 30px;max-width:1300px}
 
-/* LEFT: CHAT AREA */
-.chat-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--bg); position: relative; }
-.chat-header { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--surface); }
-#chat-flow { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+.topbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.sync-pill{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;border:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--text2)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
+.sync-dot.synced{background:var(--green);box-shadow:0 0 8px var(--green)}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:0.3}}
 
-/* CHAT BUBBLES */
-.msg { max-width: 85%; padding: 16px; border-radius: 20px; font-size: 14px; line-height: 1.6; }
-.msg.system { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-.msg.user { align-self: flex-end; background: var(--accent); color: #000; font-weight: 700; border-bottom-right-radius: 4px; }
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;height:fit-content}
+.lbl{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono)}
+input, select, textarea {width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);outline:none;font-family:var(--font);margin-bottom:15px}
+.btn{padding:12px 20px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#000}
+.btn-danger{background:var(--red-dim);color:var(--red)}
 
-/* RESULT CARD */
-.res-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 450px; margin-top: 10px; }
-.res-card img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: cover; background: #000; }
-.res-card-body { padding: 15px; }
-.res-actions { display: flex; gap: 8px; margin-top: 10px; }
+/* FEED */
+.feed{display:flex;flex-direction:column;gap:15px}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:240px 1fr}
+.result-img{background:var(--surface2);display:flex;align-items:center;justify-content:center;min-height:280px}
+.result-img img{max-width:100%;height:auto}
+.result-info{padding:20px;display:flex;flex-direction:column;gap:10px}
+.badge{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:800;text-transform:uppercase;font-family:var(--mono)}
+.badge-done{background:var(--green-dim);color:var(--green)}
+.badge-pending{background:var(--surface2);color:var(--text3)}
+.long-text{font-size:12px;color:var(--text2);line-height:1.6;max-height:150px;overflow-y:auto;border-left:2px solid var(--border);padding-left:15px}
 
-/* BOTTOM CONTROLS */
-.chat-controls { background: var(--surface); border-top: 1px solid var(--border); padding: 15px 20px; }
-.identity-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
-.id-chip { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; background: #000; transition: 0.2s; position: relative; }
-.id-chip img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.id-chip.active { border-color: var(--accent); transform: scale(1.1); }
-.id-chip span { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: 800; color: var(--text2); text-transform: uppercase; white-space: nowrap; }
+/* GUILDS LIST */
+.guild-item{display:flex;align-items:center;gap:15px;padding:12px;background:var(--surface2);border-radius:12px;margin-bottom:10px}
+.guild-logo-prev{width:40px;height:40px;background:var(--surface);border-radius:8px;overflow:hidden}
+.guild-logo-prev img{width:100%;height:100%;object-fit:cover}
 
-.input-row { display: flex; gap: 12px; align-items: center; margin-top: 5px; }
-.chat-inp { flex: 1; height: 50px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 0 18px; color: #fff; outline: none; font-size: 14px; }
-.icon-btn { width: 50px; height: 50px; border-radius: 12px; border: none; background: var(--surface2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.btn-send { background: var(--accent); color: #000; }
-
-/* RIGHT: SETTINGS PANEL */
-.settings-panel { background: var(--surface); overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 30px; border-left: 1px solid var(--border); }
-.section-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-.section-title::after { content:''; flex:1; height:1px; background: var(--border); }
-
-.data-list { display: flex; flex-direction: column; gap: 8px; }
-.item-row { display: flex; align-items: center; gap: 10px; background: var(--surface2); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; }
-.item-row.active { border-color: var(--accent); background: rgba(200,255,0,0.05); }
-.item-row input[type="radio"] { accent-color: var(--accent); }
-.del-btn { color: var(--red); background: none; border: none; cursor: pointer; font-size: 16px; margin-left: auto; }
-
-.input-group { display: flex; gap: 8px; margin-top: 10px; }
-.small-input { flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 10px; color: #fff; border-radius: 8px; font-size: 12px; }
-
-.spinner { width: 18px; height: 18px; border: 3px solid rgba(200,255,0,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,0.1);border-top-color:#000;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -77,341 +85,377 @@ body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(-
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div style="background:var(--accent); width:50px; height:50px; border-radius:12px; margin:0 auto 20px; color:#000; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px;">H</div>
-    <h2 style="margin:0">Historian Archive</h2>
-    <p style="font-size:12px; color:var(--text2); margin-bottom:25px;">Enter PIN to sync data</p>
-    <div style="display:flex; justify-content:center; margin-bottom:25px;">
-      <input class="pin-digit" id="p0" type="password" maxlength="1" oninput="mF(0)"/>
-      <input class="pin-digit" id="p1" type="password" maxlength="1" oninput="mF(1)"/>
-      <input class="pin-digit" id="p2" type="password" maxlength="1" oninput="mF(2)"/>
-      <input class="pin-digit" id="p3" type="password" maxlength="1" oninput="mF(3)"/>
+    <div class="auth-logo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <h2 style="margin-bottom:5px">Historian Engine</h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:25px">CHRONICLE ARCHIVE</p>
+
+    <div class="auth-mode-switch">
+      <button class="auth-mode-btn active" id="m-login" onclick="setMode('login')">Login</button>
+      <button class="auth-mode-btn" id="m-reg" onclick="setMode('register')">Register</button>
     </div>
-    <button onclick="login()" id="login-btn" style="width:100%; padding:16px; background:var(--accent); border:none; border-radius:12px; font-weight:800; cursor:pointer;">CONNECT SESSION</button>
+
+    <div class="pin-row">
+      <input class="pin-digit" id="p0" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p1" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p2" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-digit" id="p3" type="password" maxlength="1" inputmode="numeric"/>
+    </div>
+    <div class="pin-status" id="pin-status"></div>
+
+    <button class="auth-btn" id="auth-btn" onclick="submitAuth()">Enter Archive</button>
+    <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 
+<!-- MAIN APP -->
 <div id="app">
-  <!-- LEFT PANEL: CHAT -->
-  <div class="chat-panel">
-    <div class="chat-header">
-        <div style="font-weight:900; letter-spacing: -1px; font-size: 18px;">CHRONICLE <span id="pin-display" style="color:var(--accent)">#----</span></div>
-        <div style="display:flex; align-items:center; gap:15px;">
-            <div id="sync-status" style="font-size:9px; font-family:var(--mono); color:var(--text2)">CLOUD SYNCED</div>
-            <button onclick="logout()" style="background:none; border:none; color:var(--red); font-size:10px; font-weight:800; cursor:pointer;">LOGOUT</button>
-        </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="switchTab('build', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+      <span class="nav-label">Build</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('guilds', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-label">Guilds</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('workers', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span class="nav-label">Workers</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('vault', this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span class="nav-label">Vault</span>
+    </div>
+    <div style="margin-top:auto">
+        <button class="nav-item" onclick="location.reload()" style="color:var(--red);opacity:0.6">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="topbar">
+      <div>
+          <div style="font-weight:800; font-size:18px">Historian Engine</div>
+          <div style="font-size:9px; color:var(--text2); font-family:var(--mono)">FLUX EDITION</div>
+      </div>
+      <div class="sync-pill">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-label">Cloud Connected</span>
+      </div>
     </div>
 
-    <div id="chat-flow">
-        <div class="msg system">Commander Online. Setup your API keys in the right panel, select an identity below, and type a topic.</div>
-    </div>
-
-    <div class="chat-controls">
-        <div class="identity-selector" id="id-bar">
-            <!-- Logos injected here -->
-        </div>
-        
-        <div class="input-row">
-            <button class="icon-btn" onclick="connectLocalFolder()" id="folder-status-btn" title="Connect PC Folder">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            </button>
-            <input type="text" id="chat-inp" class="chat-inp" placeholder="Type a history topic..." onkeydown="if(event.key==='Enter') send()"/>
-            <button class="icon-btn btn-send" onclick="send()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-        </div>
-        <div id="active-folder-path" style="font-size:9px; color:var(--accent); font-family:var(--mono); margin-top:8px; opacity:0.7">PC Folder: Not Connected</div>
-    </div>
-  </div>
-
-  <!-- RIGHT PANEL: DASHBOARD -->
-  <div class="settings-panel">
-      <!-- Gemini Keys -->
-      <section>
-          <div class="section-title">Gemini API Vault</div>
-          <div class="data-list" id="gemini-list"></div>
-          <div class="input-group">
-              <input type="password" id="new-gemini" class="small-input" placeholder="AIza..."/>
-              <button onclick="addKey('gemini')" class="icon-btn" style="height:38px; width:38px;">+</button>
-          </div>
-      </section>
-
-      <!-- Workers -->
-      <section>
-          <div class="section-title">FLUX Workers</div>
-          <div class="data-list" id="worker-list"></div>
-          <div class="input-group">
-              <input type="url" id="new-worker" class="small-input" placeholder="https://flux..."/>
-              <button onclick="addKey('worker')" class="icon-btn" style="height:38px; width:38px;">+</button>
-          </div>
-      </section>
-
-      <!-- Guilds -->
-      <section>
-          <div class="section-title">Page Identities</div>
-          <div class="data-list" id="guild-list"></div>
-          <div style="background:var(--surface2); padding:15px; border-radius:10px; margin-top:10px; border:1px solid var(--border);">
-              <input type="text" id="new-guild-name" class="small-input" style="width:100%; margin-bottom:10px" placeholder="Guild Name"/>
-              <div style="display:flex; align-items:center; gap:10px;">
-                  <label style="font-size:10px; background:var(--bg); padding:10px; border-radius:5px; cursor:pointer; flex:1; text-align:center;">
-                    UPLOAD LOGO <input type="file" id="new-guild-logo" hidden accept="image/*"/>
-                  </label>
-                  <button onclick="addGuild()" class="btn-send" style="padding:10px 20px; border-radius:5px; border:none; font-weight:800; cursor:pointer;">ADD</button>
-              </div>
-          </div>
-      </section>
-
-      <!-- Batch Tool -->
-      <section>
-          <div class="section-title">Batch Manifest</div>
-          <input type="file" id="csv-input" accept=".csv,.xlsx" onchange="handleCSV(this)" style="font-size:10px; color:var(--text2)"/>
-          <p style="font-size:9px; color:var(--text2); margin-top:5px;">Upload a list to auto-generate multiple posts.</p>
-      </section>
-  </div>
-</div>
-
-<script>
-// --- CONFIGURATION ---
-const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/'; 
-
-let userData = { profiles: [], apiKeys: [], workers: [], results: [] };
-let activePin = localStorage.getItem('historian_pin') || '';
-let activeGuildId = null;
-let activeGeminiIndex = 0;
-let activeWorkerIndex = 0;
-let directoryHandle = null;
-
-// --- AUTH PERSISTENCE ---
-function mF(i) { if(document.getElementById('p'+i).value && i<3) document.getElementById('p'+(i+1)).focus(); }
-
-async function login() {
-    const pin = [0,1,2,3].map(i=>document.getElementById('p'+i).value).join('');
-    if(pin.length < 4) return;
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'CONNECTING...';
-
-    try {
-        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'login', pin}) }).then(r=>r.json());
-        if(res.error) await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'register', pin}) });
-        
-        localStorage.setItem('historian_pin', pin);
-        activePin = pin;
-        boot();
-    } catch(e) { alert("Proxy Error: Check your worker settings."); btn.disabled = false; btn.textContent = 'CONNECT SESSION'; }
-}
-
-async function boot() {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'grid';
-    document.getElementById('pin-display').textContent = '#' + activePin;
-    
-    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'load', pin: activePin}) }).then(r=>r.json());
-    if(res.data) {
-        userData = res.data;
-        // Migration check for old data structures
-        if(!userData.apiKeys) userData.apiKeys = [];
-        if(!userData.workers) userData.workers = [];
-    }
-    
-    renderDashboard();
-    renderChatHistory();
-}
-
-if(activePin) boot();
-
-function logout() { localStorage.removeItem('historian_pin'); location.reload(); }
-
-// --- DASHBOARD RENDERING ---
-function renderDashboard() {
-    // Gemini Keys
-    const gemList = document.getElementById('gemini-list');
-    gemList.innerHTML = userData.apiKeys.map((k, i) => `
-        <div class="item-row ${activeGeminiIndex === i ? 'active' : ''}">
-            <input type="radio" name="gem" ${activeGeminiIndex === i ? 'checked' : ''} onchange="activeGeminiIndex=${i}">
-            <span>AIza...${k.slice(-6)}</span>
-            <button class="del-btn" onclick="removeItem('apiKeys', ${i})">×</button>
-        </div>
-    `).join('');
-
-    // Workers
-    const workList = document.getElementById('worker-list');
-    workList.innerHTML = userData.workers.map((w, i) => `
-        <div class="item-row ${activeWorkerIndex === i ? 'active' : ''}">
-            <input type="radio" name="work" ${activeWorkerIndex === i ? 'checked' : ''} onchange="activeWorkerIndex=${i}">
-            <span style="font-size:10px">${w.split('.')[0].replace('https://','')}...</span>
-            <button class="del-btn" onclick="removeItem('workers', ${i})">×</button>
-        </div>
-    `).join('');
-
-    // Guilds & Identity Bar
-    const guildList = document.getElementById('guild-list');
-    const idBar = document.getElementById('id-bar');
-    
-    guildList.innerHTML = userData.profiles.map((p, i) => `
-        <div class="item-row">
-            <img src="${p.logo}" style="width:20px; height:20px; border-radius:50%">
-            <span>${p.name}</span>
-            <button class="del-btn" onclick="removeItem('profiles', ${i})">×</button>
-        </div>
-    `).join('');
-
-    idBar.innerHTML = userData.profiles.map(p => `
-        <div class="id-chip ${activeGuildId === p.id ? 'active' : ''}" onclick="selectGuild(${p.id})">
-            <img src="${p.logo}">
-            <span>${p.name}</span>
-        </div>
-    `).join('');
-    
-    if(!activeGuildId && userData.profiles.length > 0) selectGuild(userData.profiles[0].id);
-}
-
-function selectGuild(id) { activeGuildId = id; renderDashboard(); }
-
-async function addKey(type) {
-    const val = document.getElementById(type === 'gemini' ? 'new-gemini' : 'new-worker').value.trim();
-    if(!val) return;
-    if(type === 'gemini') userData.apiKeys.push(val);
-    else userData.workers.push(val);
-    sync(); renderDashboard();
-    document.getElementById(type === 'gemini' ? 'new-gemini' : 'new-worker').value = '';
-}
-
-async function addGuild() {
-    const name = document.getElementById('new-guild-name').value;
-    const file = document.getElementById('new-guild-logo').files[0];
-    if(!name || !file) return;
-    const logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
-    userData.profiles.push({ id: Date.now(), name, logo });
-    sync(); renderDashboard();
-    document.getElementById('new-guild-name').value = '';
-}
-
-function removeItem(key, i) { userData[key].splice(i, 1); sync(); renderDashboard(); }
-
-async function sync() {
-    const status = document.getElementById('sync-status');
-    status.textContent = 'SYNCING...';
-    await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'save', pin: activePin, data: userData}) });
-    status.textContent = 'CLOUD SYNCED';
-}
-
-// --- LOCAL PC STORAGE ---
-async function connectLocalFolder() {
-    try {
-        directoryHandle = await window.showDirectoryPicker();
-        document.getElementById('folder-status-btn').style.color = 'var(--accent)';
-        document.getElementById('active-folder-path').textContent = "PC Folder: " + directoryHandle.name;
-    } catch(e) {}
-}
-
-async function writeToLocal(topic, blob, text, guildName) {
-    if(!directoryHandle) return false;
-    try {
-        const root = await directoryHandle.getDirectoryHandle(guildName.replace(/[^a-z0-9]/gi, '_'), {create: true});
-        const base = topic.replace(/[^a-z0-9]/gi, '_').substring(0, 25);
-        
-        const imgF = await root.getFileHandle(`${base}.jpg`, {create: true});
-        const imgW = await imgF.createWritable(); await imgW.write(blob); await imgW.close();
-        
-        const txtF = await root.getFileHandle(`${base}.txt`, {create: true});
-        const txtW = await txtF.createWritable(); await txtW.write(text); await txtW.close();
-        return true;
-    } catch(e) { return false; }
-}
-
-// --- CHAT ENGINE ---
-function addBubble(type, content) {
-    const flow = document.getElementById('chat-flow');
-    const div = document.createElement('div');
-    div.className = `msg ${type}`;
-    div.innerHTML = content;
-    flow.appendChild(div);
-    flow.scrollTop = flow.scrollHeight;
-    return div;
-}
-
-async function send() {
-    const inp = document.getElementById('chat-inp');
-    const topic = inp.value.trim();
-    if(!topic || !activeGuildId) return;
-    
-    const guild = userData.profiles.find(p=>p.id === activeGuildId);
-    const geminiKey = userData.apiKeys[activeGeminiIndex];
-    const fluxUrl = userData.workers[activeWorkerIndex];
-    
-    if(!geminiKey || !fluxUrl) {
-        addBubble("system", "<b>Error:</b> API Key or Worker URL is missing.");
-        return;
-    }
-
-    inp.value = '';
-    addBubble("user", topic);
-    const loader = addBubble("system", `<div style="display:flex;align-items:center;gap:10px"><div class="spinner"></div> Forging history for ${guild.name}...</div>`);
-
-    try {
-        // 1. Text (Gemini)
-        const prompt = `Topic: ${topic}. Identity: ${guild.name}. 1 Short Caption (max 8 words, wrap 1 word in <yellow>), 1 Story (200 words). Return JSON: { "short":"", "long":"" }`;
-        const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-            method:'POST', body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-        }).then(r=>r.json());
-        const txt = JSON.parse(gRes.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
-
-        // 2. Image (Flux)
-        const iRes = await fetch(fluxUrl, { method:'POST', body: JSON.stringify({prompt: `Cinematic ultra-realistic historical scene: ${topic}`}) }).then(r=>r.blob());
-        const i64 = await new Promise(r=>{const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(iRes);});
-
-        // 3. Save PC
-        const ok = await writeToLocal(topic, iRes, txt.long, guild.name);
-        
-        loader.remove();
-        const result = { id: Date.now(), topic, short: txt.short, long: txt.long, image: i64, guild: guild.name };
-        userData.results.push(result);
-        
-        appendResultBubble(result, ok);
-        sync();
-
-    } catch(e) { loader.innerHTML = `<span style="color:var(--red)">Failed to generate. Check your keys or daily limits.</span>`; }
-}
-
-function appendResultBubble(res, savedLocally) {
-    const html = `
-        <div class="res-card">
-            <img src="${res.image}">
-            <div class="res-card-body">
-                <div style="font-size:9px; color:var(--accent); font-family:var(--mono); margin-bottom:8px;">
-                    ${savedLocally ? '✓ SAVED TO PC' : '☁ SAVED TO CLOUD ONLY'}
-                </div>
-                <div style="font-weight:800; color:var(--accent); font-size:16px; margin-bottom:10px;">${res.short}</div>
-                <div style="font-size:12px; color:var(--text2); line-height:1.6">${res.long.substring(0, 150)}...</div>
-                <div class="res-actions">
-                    <button onclick="transferToLocal(${res.id})" class="id-chip" style="background:var(--surface); border:1px solid var(--border); width:auto; border-radius:5px; height:28px; padding:0 10px; font-size:9px; color:var(--text)">TRANSFER TO PC</button>
+    <!-- BUILD TAB -->
+    <div id="tab-build" class="tab-panel active">
+        <div class="grid">
+            <div class="card">
+                <label class="lbl">Page Guild</label>
+                <select id="sel-profile"><option value="">Select Guild...</option></select>
+                
+                <label class="lbl">Topic Manifest (CSV/XLSX)</label>
+                <input type="file" id="csv-input" accept=".csv,.xlsx" onchange="importTopics(this)"/>
+                
+                <button class="btn btn-primary" style="width:100%" onclick="processBatch()" id="process-btn" disabled>Process Batch</button>
+                <br/><br/>
+                <button class="btn btn-outline" style="width:100%" onclick="exportAll()">Export All (.zip)</button>
+            </div>
+            <div class="feed" id="feed">
+                <div style="text-align:center; padding:100px; color:var(--text3); border:2px dashed var(--border); border-radius:20px">
+                    Ready to forge history...
                 </div>
             </div>
         </div>
-    `;
-    addBubble("system", html);
+    </div>
+
+    <!-- GUILDS TAB -->
+    <div id="tab-guilds" class="tab-panel">
+        <div class="grid">
+            <div class="card">
+                <label class="lbl">Guild Name</label>
+                <input type="text" id="g-name" placeholder="Ancient Rome"/>
+                <label class="lbl">Identity Sigil (Logo)</label>
+                <input type="file" id="g-logo" accept="image/*"/>
+                <button class="btn btn-primary" style="width:100%" onclick="addGuild()">Register Guild</button>
+            </div>
+            <div id="guilds-list"></div>
+        </div>
+    </div>
+
+    <!-- WORKERS TAB -->
+    <div id="tab-workers" class="tab-panel">
+        <div class="card" style="max-width:600px">
+            <label class="lbl">Cloudflare Worker URL</label>
+            <input type="url" id="w-url" placeholder="https://flux-gen.yourname.workers.dev/"/>
+            <button class="btn btn-primary" onclick="addWorker()">Add Worker</button>
+            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0"/>
+            <div id="workers-list"></div>
+        </div>
+    </div>
+
+    <!-- VAULT TAB -->
+    <div id="tab-vault" class="tab-panel">
+        <div class="card" style="max-width:600px">
+            <label class="lbl">Gemini API Key</label>
+            <div style="display:flex; gap:10px">
+                <input type="password" id="v-key" placeholder="AIza..."/>
+                <button class="btn btn-primary" onclick="addKey()">Add Key</button>
+            </div>
+            <div id="keys-list" style="margin-top:20px"></div>
+        </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// UPDATE THIS TO YOUR PROXY URL
+const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/';
+
+let userData = { apiKeys: [], profiles: [], results: [], workers: [] };
+let authMode = 'login';
+let currentPin = '';
+let topics = [];
+
+// PIN INPUT LOGIC
+[0,1,2,3].forEach(i => {
+    const el = document.getElementById('p'+i);
+    el.addEventListener('input', () => {
+        if(el.value) el.classList.add('filled');
+        if(el.value && i<3) document.getElementById('p'+(i+1)).focus();
+        if(getPin().length === 4 && authMode === 'register') checkPinAvailability();
+    });
+    el.addEventListener('keydown', e => {
+        if(e.key === 'Backspace' && !el.value && i>0) document.getElementById('p'+(i-1)).focus();
+    });
+});
+
+function getPin() { return [0,1,2,3].map(i=>document.getElementById('p'+i).value).join(''); }
+
+function setMode(m) {
+    authMode = m;
+    document.getElementById('m-login').classList.toggle('active', m==='login');
+    document.getElementById('m-reg').classList.toggle('active', m==='register');
+    document.getElementById('auth-btn').textContent = m==='login' ? 'Enter Archive' : 'Create Archive';
+    document.getElementById('pin-status').textContent = '';
 }
 
-async function transferToLocal(resId) {
-    if(!directoryHandle) { alert("Connect PC folder first."); return; }
-    const res = userData.results.find(r=>r.id === resId);
-    const blob = await fetch(res.image).then(r=>r.blob());
-    const ok = await writeToLocal(res.topic, blob, res.long, res.guild);
-    if(ok) alert("Transferred to " + directoryHandle.name);
+async function checkPinAvailability() {
+    const pin = getPin();
+    const st = document.getElementById('pin-status');
+    st.textContent = 'Checking...';
+    try {
+        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'check_pin', pin}) }).then(r=>r.json());
+        st.textContent = res.available ? '✓ PIN Available' : '✗ PIN Taken';
+        st.style.color = res.available ? '#3dffa0' : '#ff4f4f';
+    } catch(e) {}
 }
 
-function renderChatHistory() {
-    userData.results.slice(-10).forEach(r => appendResultBubble(r, false));
+async function submitAuth() {
+    const pin = getPin();
+    if(pin.length < 4) return;
+    const btn = document.getElementById('auth-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    
+    try {
+        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: authMode, pin}) }).then(r=>r.json());
+        if(res.error) throw new Error(res.error);
+        
+        currentPin = pin;
+        await loadData();
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+    } catch(e) {
+        const err = document.getElementById('auth-err');
+        err.textContent = e.message; err.style.display = 'block';
+    } finally {
+        btn.disabled = false; btn.innerHTML = authMode==='login'?'Enter Archive':'Create Archive';
+    }
 }
 
-function handleCSV(input) {
+async function loadData() {
+    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'load', pin: currentPin}) }).then(r=>r.json());
+    if(res.data) userData = res.data;
+    renderAll();
+}
+
+async function saveData() {
+    document.getElementById('sync-dot').className = 'sync-dot syncing';
+    try {
+        await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'save', pin: currentPin, data: userData}) });
+        document.getElementById('sync-dot').className = 'sync-dot synced';
+    } catch(e) {}
+}
+
+// UI LOGIC
+function switchTab(t, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+t).classList.add('active');
+    btn.classList.add('active');
+}
+
+function renderAll() {
+    renderProfiles();
+    renderKeys();
+    renderWorkers();
+    renderFeed();
+}
+
+// PROFILE LOGIC
+async function addGuild() {
+    const name = document.getElementById('g-name').value;
+    const file = document.getElementById('g-logo').files[0];
+    if(!name) return;
+    let logo = '';
+    if(file) {
+        logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
+    }
+    userData.profiles.push({ id: Date.now(), name, logo });
+    saveData(); renderProfiles();
+}
+
+function renderProfiles() {
+    const sel = document.getElementById('sel-profile');
+    sel.innerHTML = '<option value="">Select Guild...</option>' + userData.profiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    
+    document.getElementById('guilds-list').innerHTML = userData.profiles.map(p => `
+        <div class="guild-item">
+            <div class="guild-logo-prev">${p.logo ? `<img src="${p.logo}"/>` : ''}</div>
+            <div style="flex:1"><b>${p.name}</b></div>
+            <button class="btn-danger btn" onclick="removeGuild(${p.id})">Remove</button>
+        </div>
+    `).join('');
+}
+function removeGuild(id) { userData.profiles = userData.profiles.filter(p=>p.id!==id); saveData(); renderProfiles(); }
+
+// KEY LOGIC
+function addKey() {
+    const k = document.getElementById('v-key').value;
+    if(k) { userData.apiKeys.push(k); document.getElementById('v-key').value=''; saveData(); renderKeys(); }
+}
+function renderKeys() {
+    document.getElementById('keys-list').innerHTML = userData.apiKeys.map((k, i) => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px; background:var(--surface2); padding:10px; border-radius:8px">
+            <span>AIza...${k.slice(-5)}</span>
+            <button onclick="removeKey(${i})" style="color:var(--red); border:0; background:none; cursor:pointer">Remove</button>
+        </div>
+    `).join('');
+}
+function removeKey(i) { userData.apiKeys.splice(i,1); saveData(); renderKeys(); }
+
+// WORKER LOGIC
+function addWorker() {
+    const u = document.getElementById('w-url').value;
+    if(u) { userData.workers.push(u); document.getElementById('w-url').value=''; saveData(); renderWorkers(); }
+}
+function renderWorkers() {
+    document.getElementById('workers-list').innerHTML = userData.workers.map((w, i) => `
+        <div style="padding:10px; background:var(--surface2); margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between">
+            <span style="font-size:11px">${w}</span>
+            <button onclick="removeWorker(${i})" style="color:var(--red); background:none; border:0; cursor:pointer">✕</button>
+        </div>
+    `).join('');
+}
+function removeWorker(i) { userData.workers.splice(i,1); saveData(); renderWorkers(); }
+
+// ENGINE LOGIC
+function importTopics(input) {
     const file = input.files[0];
     if(!file) return;
-    Papa.parse(file, { header: true, complete: async (results) => {
-        const batch = results.data.map(r => r.Topic || r.topic).filter(t => t);
-        addBubble("system", `Detected Batch: ${batch.length} topics. Sending commands now...`);
-        // Batch processing logic could be added here to loop 'send'
-    }});
+    const ext = file.name.split('.').pop().toLowerCase();
+    if(ext === 'csv') {
+        Papa.parse(file, { header: true, complete: (res) => { topics = res.data.map(r => r.Topic || r.topic); updateBtn(); } });
+    } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wb = XLSX.read(e.target.result, { type: 'binary' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            topics = XLSX.utils.sheet_to_json(ws).map(r => r.Topic || r.topic);
+            updateBtn();
+        };
+        reader.readAsBinaryString(file);
+    }
 }
+
+function updateBtn() { document.getElementById('process-btn').disabled = (topics.length === 0 || userData.profiles.length === 0 || userData.apiKeys.length === 0); }
+
+async function processBatch() {
+    const guildId = document.getElementById('sel-profile').value;
+    const guild = userData.profiles.find(p => p.id == guildId);
+    if(!guild) return;
+
+    document.getElementById('process-btn').disabled = true;
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+
+    for(let topic of topics) {
+        if(!topic) continue;
+        const resultId = Date.now();
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.id = 'res-' + resultId;
+        card.innerHTML = `<div class="result-img"><span class="spinner"></span></div><div class="result-info"><b>${topic}</b><span class="badge badge-pending">Processing...</span></div>`;
+        feed.prepend(card);
+
+        try {
+            // 1. Gemini Text
+            const prompt = `Write a viral historical post about ${topic} for "${guild.name}". 1 short punchy caption (max 8 words, wrap 1 word in <yellow>). 1 long detailed story (250 words). Format: JSON { "short": "", "long": "" }`;
+            const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userData.apiKeys[0]}`, {
+                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            }).then(r => r.json());
+            const text = JSON.parse(gemRes.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
+
+            // 2. FLUX Image
+            const imgRes = await fetch(userData.workers[0], {
+                method: 'POST', body: JSON.stringify({ prompt: `Cinematic historical scene of ${topic}, ultra-realistic, 4k` })
+            }).then(r => r.blob());
+            const imgUrl = URL.createObjectURL(imgRes);
+
+            // 3. Update UI
+            card.innerHTML = `
+                <div class="result-img"><img src="${imgUrl}"/></div>
+                <div class="result-info">
+                    <div style="display:flex; justify-content:space-between"><b>${topic}</b><span class="badge badge-done">Done</span></div>
+                    <div style="font-weight:800; color:var(--accent)">${text.short}</div>
+                    <div class="long-text">${text.long}</div>
+                </div>
+            `;
+            userData.results.push({ topic, short: text.short, long: text.long, image: imgUrl, guild: guild.name });
+        } catch(e) {
+            card.innerHTML += `<div style="color:var(--red); font-size:10px">Error: ${e.message}</div>`;
+        }
+    }
+    saveData();
+    document.getElementById('process-btn').disabled = false;
+}
+
+function renderFeed() {
+    if(userData.results.length === 0) return;
+    const feed = document.getElementById('feed');
+    feed.innerHTML = userData.results.map(r => `
+        <div class="result-card">
+            <div class="result-img"><img src="${r.image}"/></div>
+            <div class="result-info">
+                <div style="display:flex; justify-content:space-between"><b>${r.topic}</b><span class="badge badge-done">Saved</span></div>
+                <div style="font-weight:800; color:var(--accent)">${r.short}</div>
+                <div class="long-text">${r.long}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function exportAll() {
+    if(userData.results.length === 0) return;
+    const zip = new JSZip();
+    userData.results.forEach((res, i) => {
+        zip.file(`${i}_${res.topic}.txt`, `${res.short}\n\n${res.long}`);
+    });
+    const content = await zip.generateAsync({type:"blob"});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(content);
+    link.download = "history_archive.zip";
+    link.click();
+}
+
 </script>
 </body>
 </html>
