@@ -7,65 +7,71 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg: #0a0a0c; --surface: #121217; --surface2: #1c1c24; --border: rgba(255,255,255,0.08);
-  --accent: #c8ff00; --red: #ff4f4f; --green: #3dffa0; --text: #f0f0f5; --text2: #9494a5;
+  --bg: #0c0c0f; --surface: #111116; --surface2: #18181f; --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13); --text: #f0f0f5; --text2: #7a7a90; --text3: #4a4a60;
+  --accent: #c8ff00; --red: #ff4f4f; --red-dim: rgba(255,79,79,0.12); --green: #3dffa0;
+  --green-dim:rgba(61,255,160,0.1); --amber: #ffb347; --radius: 18px; --radius-sm:10px;
   --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace; --sidebar-w: 280px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
 
 /* --- AUTH --- */
 #auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:2000}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:32px;padding:40px;width:380px;text-align:center}
-.pin-digit{background:var(--surface2);border:1px solid var(--border);border-radius:14px;height:65px;font-size:28px;text-align:center;color:var(--accent);width:60px;margin:0 5px;outline:none;font-family:var(--mono)}
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:28px;padding:44px;width:380px;text-align:center;box-shadow:0 10px 50px rgba(0,0,0,0.7)}
+.pin-digit{background:var(--surface2);border:1px solid var(--border);border-radius:12px;height:64px;font-size:28px;font-weight:800;text-align:center;color:var(--accent);width:60px;margin:0 5px;outline:none;font-family:var(--mono)}
 
 /* --- LAYOUT --- */
 .sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px;z-index:100}
-.main-chat{flex:1;display:flex;flex-direction:column;background:var(--bg);position:relative}
+.main-area{flex:1;display:flex;flex-direction:column;background:var(--bg);position:relative}
 
-/* --- SIDEBAR COMPONENTS --- */
-.sidebar-btn{width:100%;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;color:var(--text);font-weight:800;cursor:pointer;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px}
+/* --- SIDEBAR --- */
+.new-chat-btn{width:100%;padding:14px;background:var(--accent);color:#000;border:none;border-radius:14px;font-weight:800;cursor:pointer;margin-bottom:20px;font-family:var(--font);text-transform:uppercase;font-size:11px;letter-spacing:1px}
 .bucket-list{flex:1;overflow-y:auto}
-.bucket-item{padding:12px;border-radius:12px;cursor:pointer;margin-bottom:8px;font-size:14px;color:var(--text2);display:flex;justify-content:space-between;align-items:center;transition:0.2s}
-.bucket-item:hover{background:rgba(255,255,255,0.03)}
-.bucket-item.active{background:var(--accent);color:#000;font-weight:700}
+.bucket-item{padding:12px 15px;border-radius:12px;cursor:pointer;margin-bottom:6px;font-size:13px;color:var(--text2);display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
+.bucket-item:hover{background:var(--surface2)}
+.bucket-item.active{background:rgba(200,255,0,0.05);color:var(--accent);border-color:rgba(200,255,0,0.2)}
 
 /* --- CHAT AREA --- */
-.chat-window{flex:1;overflow-y:auto;padding:40px;display:flex;flex-direction:column;gap:30px}
-.message{max-width:85%;display:flex;flex-direction:column;gap:10px}
-.message.system{align-self:flex-start}
-.message.user{align-self:flex-end;text-align:right}
+.chat-window{flex:1;overflow-y:auto;padding:40px;display:flex;flex-direction:column;gap:30px;scroll-behavior:smooth}
+.chat-window::-webkit-scrollbar{width:4px}
+.chat-window::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 
-.bubble{padding:20px;border-radius:24px;background:var(--surface);border:1px solid var(--border);line-height:1.6}
-.message.user .bubble{background:var(--accent);color:#000;font-weight:600}
+/* --- SYSTEM CONFIG MESSAGE --- */
+.config-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:25px;width:100%;max-width:800px;margin:0 auto}
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:15px}
 
-.action-bubble{background:var(--surface2);border:1px dashed var(--border);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:15px}
+/* --- RESULT CARD (EXACTLY LIKE ORIGINAL) --- */
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:grid;grid-template-columns:220px 1fr;max-width:900px;margin:0 auto;width:100%}
+.result-img-col{background:var(--surface2);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:15px;min-height:260px}
+.result-img-col img{max-width:100%;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.5)}
+.result-content{padding:20px;display:flex;flex-direction:column;gap:12px}
+.caption-text{font-size:18px;font-weight:800;letter-spacing:-.5px}
+.long-text{font-size:12px;color:var(--text2);line-height:1.6;border-left:2px solid var(--border);padding-left:15px;max-height:150px;overflow-y:auto}
 
-/* --- IMAGE CARDS IN CHAT --- */
-.result-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;overflow:hidden;display:grid;grid-template-columns:300px 1fr}
-.result-img img{width:100%;height:auto;display:block}
-.result-body{padding:20px}
-
-/* --- FOOTER / INPUT --- */
-.chat-footer{padding:20px 40px;background:var(--surface);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:15px}
+/* --- INPUT AREA --- */
+.footer{padding:20px 40px;background:var(--surface);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:15px}
 .input-row{display:flex;gap:15px;align-items:center}
-.chat-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:15px 25px;color:var(--text);outline:none}
-.folder-pill{background:rgba(61,255,160,0.1);color:var(--green);padding:6px 15px;border-radius:100px;font-size:11px;font-family:var(--mono);border:1px solid rgba(61,255,160,0.2);cursor:pointer}
+.chat-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:14px 25px;color:var(--text);outline:none;font-family:var(--font)}
+.pill{padding:6px 14px;border-radius:100px;font-size:10px;font-family:var(--mono);text-transform:uppercase;cursor:pointer;border:1px solid var(--border);color:var(--text2)}
+.pill.active{background:var(--green-dim);color:var(--green);border-color:rgba(61,255,160,0.3)}
 
-/* --- BRAND PICKER --- */
-.brand-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px}
-.brand-node{min-width:60px;height:60px;background:var(--surface);border:1px solid var(--border);border-radius:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.brand-node.active{border-color:var(--accent);box-shadow:0 0 15px rgba(200,255,0,0.2)}
-.brand-node img{width:100%;height:100%;object-fit:cover}
+/* --- SETTINGS MODAL --- */
+#settings-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:1500}
+.modal-content{background:var(--surface);border:1px solid var(--border);border-radius:32px;width:900px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:25px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:30px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:30px}
 
-/* --- OVERLAYS --- */
-#config-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:500}
-.config-card{background:var(--surface);padding:30px;border-radius:24px;width:500px;border:1px solid var(--border)}
+/* --- FORMS --- */
+.lbl{display:block;font-size:9px;font-weight:800;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono);letter-spacing:1px}
+input, select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);outline:none;font-family:var(--font);margin-bottom:10px}
+.btn-sm{padding:8px 15px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none;background:var(--surface2);color:var(--text)}
 
-.spinner{width:18px;height:18px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -74,74 +80,86 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 <!-- AUTH -->
 <div id="auth-screen">
   <div class="auth-card">
-    <h2 style="margin-bottom:30px"> Historian PIN </h2>
-    <div style="display:flex; justify-content:center; margin-bottom:20px">
-      <input class="pin-digit" id="p0" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p1" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p2" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p3" type="password" maxlength="1" inputmode="numeric"/>
+    <div style="background:var(--accent); width:50px; height:50px; border-radius:12px; margin:0 auto 20px; display:flex; align-items:center; justify-content:center; color:#000">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     </div>
-    <div id="auth-status" style="font-size:11px; color:var(--text2); margin-bottom:20px">Enter your 4-digit archive code</div>
-    <button onclick="submitAuth()" style="width:100%; padding:15px; background:var(--accent); border:none; border-radius:12px; font-weight:900; cursor:pointer">OPEN ARCHIVE</button>
+    <h2 style="font-weight:800">Archive Vault</h2>
+    <p style="font-size:11px; color:var(--text2); margin-bottom:30px; letter-spacing:1px">ENTER 4-DIGIT PIN</p>
+    <div style="display:flex; justify-content:center; margin-bottom:30px">
+      <input class="pin-digit" id="p0" type="password" maxlength="1"/>
+      <input class="pin-digit" id="p1" type="password" maxlength="1"/>
+      <input class="pin-digit" id="p2" type="password" maxlength="1"/>
+      <input class="pin-digit" id="p3" type="password" maxlength="1"/>
+    </div>
+    <button onclick="submitAuth()" class="new-chat-btn">Open Engine</button>
+    <div id="auth-err" style="color:var(--red); font-size:11px; margin-top:20px; display:none"></div>
   </div>
 </div>
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar" style="display:none">
-  <button class="sidebar-btn" onclick="createNewBucket()">+ New Bucket</button>
+<div class="sidebar" id="sidebar-ui" style="display:none">
+  <button class="new-chat-btn" onclick="createNewBucket()">+ New History</button>
   <div class="bucket-list" id="bucket-list"></div>
   <div style="padding-top:20px; border-top:1px solid var(--border)">
-    <button class="sidebar-btn" style="background:none" onclick="toggleConfig()">System Settings</button>
+    <button class="btn-sm" style="width:100%; background:var(--surface2); color:var(--text2)" onclick="toggleSettings()">⚙ System Config</button>
   </div>
 </div>
 
-<!-- MAIN CHAT -->
-<div class="main-chat" id="app" style="display:none">
+<!-- MAIN AREA -->
+<div class="main-area" id="app-ui" style="display:none">
   <div class="chat-window" id="chat-window">
-    <!-- Messages flow here -->
+    <!-- Messages & Result Cards flow here -->
   </div>
 
-  <div class="chat-footer">
+  <div class="footer">
     <div class="input-row">
-      <div class="folder-pill" id="folder-pill" onclick="connectLocalFolder()">Connect PC Folder: Not Set</div>
-      <div id="sync-status" style="font-size:10px; font-family:var(--mono); color:var(--text2)">Cloud Ready</div>
+      <div class="pill" id="folder-status" onclick="connectPCFolder()">PC Sync: Not Connected</div>
+      <div id="sync-label" style="font-size:9px; font-family:var(--mono); color:var(--text3)">Cloud: Ready</div>
     </div>
     <div class="input-row">
-      <input type="text" class="chat-input" id="chat-input" placeholder="Type a topic or use the tools above..."/>
-      <button onclick="sendManualTopic()" style="background:var(--accent); border:none; width:50px; height:50px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Type a history topic to generate..."/>
+      <button onclick="manualGenerate()" style="background:var(--accent); border:none; width:50px; height:50px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
       </button>
     </div>
   </div>
 </div>
 
-<!-- CONFIG OVERLAY -->
-<div id="config-overlay">
-  <div class="config-card">
-    <h3 style="margin-bottom:20px">System Config</h3>
-    <label style="font-size:10px; font-weight:800; color:var(--text2)">GEMINI API KEY</label>
-    <input type="password" id="cfg-gemini" placeholder="AIza..."/>
-    <label style="font-size:10px; font-weight:800; color:var(--text2)">FLUX WORKER URL</label>
-    <input type="url" id="cfg-worker" placeholder="https://..."/>
-    <hr style="border:0; border-top:1px solid var(--border); margin:20px 0"/>
-    <h4 style="margin-bottom:10px">Brands (Guilds)</h4>
-    <div id="cfg-brands" style="margin-bottom:15px"></div>
-    <div style="display:flex; gap:10px">
-      <input type="text" id="cfg-brand-name" placeholder="Brand Name"/>
-      <input type="file" id="cfg-brand-logo" accept="image/*" style="display:none"/>
-      <button class="btn-sm" onclick="document.getElementById('cfg-brand-logo').click()">Logo</button>
-      <button class="btn-sm" style="background:var(--accent); color:#000" onclick="addBrandToConfig()">Add</button>
+<!-- SETTINGS MODAL (VAULT, WORKERS, GUILDS) -->
+<div id="settings-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="font-weight:800">System Configuration</h3>
+      <button class="btn-sm" onclick="toggleSettings()">Close</button>
     </div>
-    <button onclick="toggleConfig()" style="width:100%; margin-top:20px; padding:10px; border-radius:10px; border:none; cursor:pointer">Close</button>
+    <div class="modal-body">
+      <!-- LEFT: VAULT & WORKERS -->
+      <div>
+        <label class="lbl">Gemini API Keys</label>
+        <div style="display:flex; gap:10px"><input type="password" id="set-api" placeholder="AIza..."/><button class="btn-sm" onclick="addKey()">Add</button></div>
+        <div id="keys-list" style="margin-bottom:20px"></div>
+        
+        <label class="lbl">Cloudflare Worker URLs</label>
+        <div style="display:flex; gap:10px"><input type="url" id="set-worker" placeholder="https://..."/><button class="btn-sm" onclick="addWorker()">Add</button></div>
+        <div id="workers-list"></div>
+      </div>
+      <!-- RIGHT: GUILDS -->
+      <div>
+        <label class="lbl">Register New Guild</label>
+        <input type="text" id="set-guild-name" placeholder="Guild Name"/>
+        <input type="file" id="set-guild-logo" accept="image/*" style="font-size:10px"/>
+        <button class="btn-sm" style="background:var(--accent); color:#000; width:100%" onclick="addGuild()">Add Guild</button>
+        <div id="guilds-list" style="margin-top:20px"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/';
 let currentPin = '';
-let userData = { apiKeys: [], profiles: [], buckets: [] };
-let currentBucketId = null;
-let activeBrandId = null;
+let userData = { apiKeys: [], profiles: [], workers: [], buckets: [] };
+let activeBucketId = null;
 let localDirHandle = null;
 
 // --- AUTH ---
@@ -152,235 +170,217 @@ let localDirHandle = null;
 function getPin() { return [0,1,2,3].map(i=>document.getElementById('p'+i).value).join(''); }
 
 async function submitAuth() {
-  const pin = getPin();
-  try {
-    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'login', pin}) }).then(r=>r.json());
-    if(res.error) {
-        if(confirm("PIN not found. Create new archive?")) {
-            await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'register', pin}) });
-        } else return;
-    }
-    currentPin = pin;
-    await loadData();
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('sidebar').style.display = 'flex';
-    document.getElementById('app').style.display = 'flex';
-  } catch(e){ alert("Auth Error"); }
+    const pin = getPin();
+    const btn = document.querySelector('.auth-card button');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    try {
+        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'login', pin}) }).then(r=>r.json());
+        if(res.error) {
+            if(confirm("New PIN detected. Create new archive?")) await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'register', pin}) });
+            else return;
+        }
+        currentPin = pin;
+        await loadData();
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('sidebar-ui').style.display = 'flex';
+        document.getElementById('app-ui').style.display = 'flex';
+    } catch(e) { document.getElementById('auth-err').textContent = "Access Denied"; document.getElementById('auth-err').style.display = 'block'; }
+    finally { btn.disabled = false; btn.textContent = 'Open Engine'; }
 }
 
 async function loadData() {
-    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'load', pin: currentPin}) }).then(r=>r.json());
+    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'load', pin: currentPin}) }).then(r=>r.json());
     if(res.data) userData = res.data;
     if(!userData.buckets) userData.buckets = [];
-    renderBucketList();
-    renderConfigBrands();
+    renderBuckets();
+    renderSettings();
 }
 
 async function saveData() {
-    document.getElementById('sync-status').textContent = 'Syncing...';
-    await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'save', pin: currentPin, data: userData}) });
-    document.getElementById('sync-status').textContent = 'Cloud Synced';
+    document.getElementById('sync-label').textContent = 'SYNCING...';
+    await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'save', pin: currentPin, data: userData}) });
+    document.getElementById('sync-label').textContent = 'CLOUD READY';
 }
 
 // --- BUCKETS / CHAT ---
 function createNewBucket() {
     const id = Date.now();
-    const newBucket = { id, name: "New Batch " + (userData.buckets.length + 1), history: [] };
-    userData.buckets.unshift(newBucket);
+    const b = { id, name: "History " + (userData.buckets.length + 1), config: { guildId: '', apiKey: '', workerUrl: '' }, history: [] };
+    userData.buckets.unshift(b);
     switchBucket(id);
     saveData();
-    renderBucketList();
+    renderBuckets();
 }
 
 function switchBucket(id) {
-    currentBucketId = id;
-    renderBucketList();
-    renderChatHistory();
+    activeBucketId = id;
+    renderBuckets();
+    renderChat();
 }
 
-function renderBucketList() {
+function renderBuckets() {
     const list = document.getElementById('bucket-list');
     list.innerHTML = userData.buckets.map(b => `
-        <div class="bucket-item ${currentBucketId === b.id ? 'active' : ''}" onclick="switchBucket(${b.id})">
-            ${b.name}
+        <div class="bucket-item ${activeBucketId === b.id ? 'active' : ''}" onclick="switchBucket(${b.id})">
+            <span>${b.name}</span>
+            <span onclick="event.stopPropagation(); deleteBucket(${b.id})" style="opacity:0.3">✕</span>
         </div>
     `).join('');
 }
 
-function addMessageToHistory(msg) {
-    const bucket = userData.buckets.find(b => b.id === currentBucketId);
-    if(bucket) {
-        bucket.history.push(msg);
-        renderChatHistory();
-        saveData();
-    }
-}
-
-function renderChatHistory() {
-    const window = document.getElementById('chat-window');
-    const bucket = userData.buckets.find(b => b.id === currentBucketId);
-    window.innerHTML = '';
-
+function renderChat() {
+    const win = document.getElementById('chat-window');
+    const bucket = userData.buckets.find(b => b.id === activeBucketId);
+    win.innerHTML = '';
     if(!bucket) return;
 
-    // Welcome Control Bubble if empty
-    if(bucket.history.length === 0) {
-        window.innerHTML = `
-            <div class="message system">
-                <div class="bubble"><b>System Ready.</b> To begin, select a Brand and upload your topic manifest or type a single topic below.</div>
-                <div class="action-bubble">
-                    <label style="font-size:9px; font-weight:800; color:var(--text2)">1. SELECT ACTIVE BRAND</label>
-                    <div class="brand-strip">${renderBrandStrip()}</div>
-                    <label style="font-size:9px; font-weight:800; color:var(--text2); margin-top:10px">2. IMPORT TOPICS</label>
-                    <input type="file" id="batch-file" accept=".csv,.xlsx" onchange="processBatchFile(this)"/>
-                    <label style="font-size:9px; font-weight:800; color:var(--text2); margin-top:10px">3. OR PUSH LOCAL FILES</label>
-                    <button class="btn-sm" onclick="pushLocalFilesToCloud()">Select local files to push to Cloud</button>
+    // --- SYSTEM CONFIG MESSAGE ---
+    const configMsg = document.createElement('div');
+    configMsg.innerHTML = `
+        <div class="config-card">
+            <h4 style="font-weight:800; font-size:14px">Batch Configuration</h4>
+            <div class="config-grid">
+                <div>
+                    <label class="lbl">Target Guild</label>
+                    <select onchange="updateBucketConfig('guildId', this.value)">
+                        <option value="">Select Guild...</option>
+                        ${userData.profiles.map(p => `<option value="${p.id}" ${bucket.config.guildId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                    </select>
+                    <label class="lbl">Active Worker</label>
+                    <select onchange="updateBucketConfig('workerUrl', this.value)">
+                        <option value="">Select Worker...</option>
+                        ${userData.workers.map(w => `<option value="${w}" ${bucket.config.workerUrl == w ? 'selected' : ''}>${w.split('.')[0]}...</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="lbl">Gemini Key</label>
+                    <select onchange="updateBucketConfig('apiKey', this.value)">
+                        <option value="">Select Key...</option>
+                        ${userData.apiKeys.map(k => `<option value="${k}" ${bucket.config.apiKey == k ? 'selected' : ''}>Key ${k.slice(-4)}</option>`).join('')}
+                    </select>
+                    <label class="lbl">Import Manifest</label>
+                    <input type="file" accept=".csv,.xlsx" onchange="batchProcessFile(this)"/>
                 </div>
             </div>
-        `;
-    }
-
-    bucket.history.forEach(h => {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${h.role}`;
-        if(h.type === 'result') {
-            msgDiv.innerHTML = `
-                <div class="result-card">
-                    <div class="result-img"><img src="${h.image}"/></div>
-                    <div class="result-body">
-                        <div style="font-weight:800; color:var(--accent)">${h.short}</div>
-                        <div style="font-size:12px; color:var(--text2); margin-top:10px">${h.long}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            msgDiv.innerHTML = `<div class="bubble">${h.text}</div>`;
-        }
-        window.appendChild(msgDiv);
-    });
-    window.scrollTop = window.scrollHeight;
-}
-
-// --- CONTROLS ---
-function renderBrandStrip() {
-    return userData.profiles.map(p => `
-        <div class="brand-node ${activeBrandId === p.id ? 'active' : ''}" onclick="setActiveBrand(${p.id})">
-            ${p.logo ? `<img src="${p.logo}"/>` : p.name[0]}
         </div>
-    `).join('');
+    `;
+    win.appendChild(configMsg);
+
+    // --- HISTORY RESULTS ---
+    bucket.history.forEach(h => {
+        const card = document.createElement('div');
+        card.className = "result-card";
+        card.innerHTML = `
+            <div class="result-img-col"><img src="${h.image}"/></div>
+            <div class="result-content">
+                <div style="font-size:9px; font-weight:800; color:var(--accent); text-transform:uppercase">${h.guildName}</div>
+                <div class="caption-text">${h.short.replace('<yellow>', '<span style="color:var(--accent)">').replace('</yellow>', '</span>')}</div>
+                <div class="long-text">${h.long}</div>
+            </div>
+        `;
+        win.appendChild(card);
+    });
+    win.scrollTop = win.scrollHeight;
 }
 
-function setActiveBrand(id) {
-    activeBrandId = id;
-    renderChatHistory();
+function updateBucketConfig(key, val) {
+    const bucket = userData.buckets.find(b => b.id === activeBucketId);
+    bucket.config[key] = val;
+    saveData();
 }
 
-async function processBatchFile(input) {
+async function batchProcessFile(input) {
     const file = input.files[0];
-    if(!file || !activeBrandId) return alert("Select a Brand first!");
-    
-    addMessageToHistory({ role:'user', text: `Uploaded manifest: ${file.name}. Start processing.` });
+    if(!file) return;
+    const bucket = userData.buckets.find(b => b.id === activeBucketId);
+    if(!bucket.config.guildId || !bucket.config.apiKey || !bucket.config.workerUrl) return alert("Complete Configuration Card first!");
 
-    Papa.parse(file, { header:true, complete: async (res) => {
-        const items = res.data.map(r => r.Topic || r.topic);
-        for(let t of items) {
-            if(t) await runSingleGeneration(t);
-        }
+    Papa.parse(file, { header: true, complete: async (res) => {
+        const topics = res.data.map(r => r.Topic || r.topic);
+        for(let t of topics) if(t) await runGeneration(t, bucket);
     }});
 }
 
-async function sendManualTopic() {
+async function manualGenerate() {
     const inp = document.getElementById('chat-input');
-    const t = inp.value.trim();
-    if(!t || !activeBrandId) return alert("Select Brand and enter topic!");
+    const topic = inp.value.trim();
+    if(!topic) return;
+    const bucket = userData.buckets.find(b => b.id === activeBucketId);
+    if(!bucket.config.guildId) return alert("Select a Guild in the Config Card!");
     inp.value = '';
-    addMessageToHistory({ role:'user', text: t });
-    await runSingleGeneration(t);
+    await runGeneration(topic, bucket);
 }
 
-async function runSingleGeneration(topic) {
-    const brand = userData.profiles.find(p => p.id === activeBrandId);
-    const geminiKey = document.getElementById('cfg-gemini').value || userData.apiKeys[0];
-    const workerUrl = document.getElementById('cfg-worker').value || userData.workers[0];
+async function runGeneration(topic, bucket) {
+    const guild = userData.profiles.find(p => p.id == bucket.config.guildId);
+    
+    // UI Progress Placeholder
+    const win = document.getElementById('chat-window');
+    const temp = document.createElement('div');
+    temp.className = "result-card";
+    temp.innerHTML = `<div class="result-img-col"><span class="spinner"></span></div><div class="result-content"><b>${topic}</b><p style="font-size:11px">Forging chronicle...</p></div>`;
+    win.appendChild(temp);
+    win.scrollTop = win.scrollHeight;
 
     try {
-        // Text
-        const prompt = `Create viral post for "${brand.name}" about ${topic}. Return JSON: {"short": "8 word caption with <yellow>", "long": "250 word story"}`;
-        const tRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+        // 1. TEXT
+        const prompt = `Write viral post for "${guild.name}" about ${topic}. JSON output: {"short": "8 word caption with <yellow>", "long": "250 word story"}`;
+        const tRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${bucket.config.apiKey}`, {
             method:'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         }).then(r=>r.json());
-        const content = JSON.parse(tRes.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
+        const data = JSON.parse(tRes.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
 
-        // Image
-        const iRes = await fetch(workerUrl, { method:'POST', body: JSON.stringify({ prompt: `Historical scene: ${topic}, 4k, cinematic` }) }).then(r=>r.blob());
+        // 2. IMAGE
+        const iRes = await fetch(bucket.config.workerUrl, { method:'POST', body: JSON.stringify({ prompt: `Historical cinematic scene: ${topic}, 4k` }) }).then(r=>r.blob());
         
-        // Convert blob to base64 for cloud storage
         const reader = new FileReader();
         reader.readAsDataURL(iRes);
         reader.onloadend = async () => {
-            const base64 = reader.result;
-            const msg = { role:'system', type:'result', topic, short: content.short, long: content.long, image: base64 };
-            addMessageToHistory(msg);
+            const b64 = reader.result;
+            const entry = { guildName: guild.name, topic, short: data.short, long: data.long, image: b64 };
+            bucket.history.push(entry);
+            renderChat();
+            saveData();
 
-            // AUTO-SAVE TO PC
+            // PC SYNC
             if(localDirHandle) {
-                const brandFolder = await localDirHandle.getDirectoryHandle(brand.name.replace(/[^a-z0-9]/gi, '_'), {create:true});
-                const fileHandle = await brandFolder.getFileHandle(`${topic.replace(/[^a-z0-9]/gi, '_')}.jpg`, {create:true});
-                const writable = await fileHandle.createWritable();
-                await writable.write(iRes);
-                await writable.close();
-                
-                const txtHandle = await brandFolder.getFileHandle(`${topic.replace(/[^a-z0-9]/gi, '_')}.txt`, {create:true});
-                const txtWritable = await txtHandle.createWritable();
-                await txtWritable.write(content.long);
-                await txtWritable.close();
+                const folder = await localDirHandle.getDirectoryHandle(guild.name.replace(/[^a-z0-9]/gi, '_'), {create:true});
+                const imgFile = await folder.getFileHandle(`${topic.replace(/[^a-z0-9]/gi, '_')}.jpg`, {create:true});
+                const iW = await imgFile.createWritable(); await iW.write(iRes); await iW.close();
+                const txtFile = await folder.getFileHandle(`${topic.replace(/[^a-z0-9]/gi, '_')}.txt`, {create:true});
+                const tW = await txtFile.createWritable(); await tW.write(data.long); await tW.close();
             }
         };
-    } catch(e) { console.error(e); }
+    } catch(e) { temp.innerHTML = `<div class="result-content" style="color:var(--red)">Generation Failed: ${topic}</div>`; }
 }
 
-// --- LOCAL PC FOLDER ---
-async function connectLocalFolder() {
-    try {
-        localDirHandle = await window.showDirectoryPicker();
-        document.getElementById('folder-pill').textContent = "Saving to: " + localDirHandle.name;
-    } catch(e){}
+// --- SETTINGS ---
+function toggleSettings() {
+    const m = document.getElementById('settings-modal');
+    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
 }
 
-async function pushLocalFilesToCloud() {
-    // Allows user to pick local images and save them into the current bucket
-    const [fileHandle] = await window.showOpenFilePicker({ multiple: true });
-    for(const fh of [fileHandle]) {
-        const file = await fh.getFile();
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-            addMessageToHistory({ role:'system', type:'result', topic: file.name, short: 'Imported File', long: '', image: reader.result });
-        };
-    }
-}
-
-// --- CONFIG ---
-function toggleConfig() {
-    const overlay = document.getElementById('config-overlay');
-    overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
-}
-
-async function addBrandToConfig() {
-    const name = document.getElementById('cfg-brand-name').value;
-    const logoFile = document.getElementById('cfg-brand-logo').files[0];
+function addKey() { const v = document.getElementById('set-api').value; if(v) { userData.apiKeys.push(v); document.getElementById('set-api').value=''; saveData(); renderSettings(); }}
+function addWorker() { const v = document.getElementById('set-worker').value; if(v) { userData.workers.push(v); document.getElementById('set-worker').value=''; saveData(); renderSettings(); }}
+async function addGuild() {
+    const name = document.getElementById('set-guild-name').value;
+    const file = document.getElementById('set-guild-logo').files[0];
+    if(!name) return;
     let logo = '';
-    if(logoFile) logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(logoFile); });
-    
+    if(file) logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
     userData.profiles.push({ id: Date.now(), name, logo });
-    saveData();
-    renderConfigBrands();
+    document.getElementById('set-guild-name').value='';
+    saveData(); renderSettings();
 }
 
-function renderConfigBrands() {
-    document.getElementById('cfg-brands').innerHTML = userData.profiles.map(p => `
-        <div style="font-size:12px; margin-bottom:5px">${p.name} <span onclick="removeBrand(${p.id})" style="color:var(--red); cursor:pointer">✕</span></div>
-    `).join('');
+function renderSettings() {
+    document.getElementById('keys-list').innerHTML = userData.apiKeys.map((k,i)=>`<div style="font-size:10px; padding:5px; background:var(--surface2); margin-top:5px; border-radius:5px">Key ${k.slice(-8)} <span onclick="userData.apiKeys.splice(${i},1);saveData();renderSettings()" style="float:right; cursor:pointer">✕</span></div>`).join('');
+    document.getElementById('workers-list').innerHTML = userData.workers.map((w,i)=>`<div style="font-size:10px; padding:5px; background:var(--surface2); margin-top:5px; border-radius:5px">${w.split('.')[0]}... <span onclick="userData.workers.splice(${i},1);saveData();renderSettings()" style="float:right; cursor:pointer">✕</span></div>`).join('');
+    document.getElementById('guilds-list').innerHTML = userData.profiles.map((p,i)=>`<div style="display:flex; align-items:center; gap:10px; margin-top:5px; background:var(--surface2); padding:10px; border-radius:10px"><b>${p.name}</b> <span onclick="userData.profiles.splice(${i},1);saveData();renderSettings()" style="margin-left:auto; cursor:pointer">✕</span></div>`).join('');
+}
+
+async function connectPCFolder() {
+    try { localDirHandle = await window.showDirectoryPicker(); document.getElementById('folder-status').textContent = "Syncing to: " + localDirHandle.name; document.getElementById('folder-status').classList.add('active'); } catch(e){}
 }
 </script>
 </body>
