@@ -11,73 +11,125 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg: #0c0c0f; --surface: #111116; --surface2: #18181f; --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13); --text: #f0f0f5; --text2: #7a7a90; --text3: #4a4a60;
-  --accent: #c8ff00; --red: #ff4f4f; --red-dim: rgba(255,79,79,0.12); --green: #3dffa0;
-  --green-dim:rgba(61,255,160,0.1); --amber: #ffb347; --radius: 18px; --radius-sm:10px;
-  --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace; --nav-w: 80px;
+  --bg:#0c0c0f;--surface:#111116;--surface2:#18181f;--border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);--text:#f0f0f5;--text2:#7a7a90;--text3:#4a4a60;
+  --accent:#c8ff00;--red:#ff4f4f;--red-dim:rgba(255,79,79,0.12);--green:#3dffa0;
+  --green-dim:rgba(61,255,160,0.1);--amber:#ffb347;--radius:18px;--radius-sm:10px;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;--nav-w:80px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
 
-/* AUTH SCREEN */
-#auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+/* AUTH */
+#auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.4s}
+#auth-screen.hidden{opacity:0;pointer-events:none}
 .auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:28px;padding:44px 48px;width:100%;max-width:400px;text-align:center;box-shadow:0 10px 50px rgba(0,0,0,0.7)}
-.auth-logo-icon{width:50px;height:50px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#000}
+.auth-logo{width:52px;height:52px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#000}
 .auth-mode-switch{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:28px}
-.auth-mode-btn{flex:1;padding:10px;border:none;background:none;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border-radius:9px}
+.auth-mode-btn{flex:1;padding:10px;border:none;background:none;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border-radius:9px;transition:0.2s}
 .auth-mode-btn.active{background:var(--surface);color:var(--text)}
 .pin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px}
-.pin-digit{background:var(--surface2);border:1px solid var(--border);border-radius:12px;height:64px;font-size:28px;font-weight:800;text-align:center;color:var(--text);font-family:var(--mono);outline:none;width:100%}
-.pin-digit.filled{border-color:var(--accent);color:var(--accent)}
-.pin-status{font-size:10px;font-family:var(--mono);height:20px;margin-bottom:10px}
-.auth-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:12px;padding:16px;font-weight:800;text-transform:uppercase;cursor:pointer;transition:0.2s}
+.pin-dot{background:var(--surface2);border:1.5px solid var(--border2);border-radius:14px;height:68px;font-size:30px;font-weight:800;text-align:center;color:var(--text);font-family:var(--mono);outline:none;width:100%;transition:0.15s;caret-color:var(--accent)}
+.pin-dot:focus{border-color:var(--accent);background:rgba(200,255,0,0.05)}
+.pin-dot.filled{border-color:var(--accent);color:var(--accent)}
+.pin-hint{font-size:10px;font-family:var(--mono);color:var(--text3);height:18px;margin-bottom:14px;transition:0.2s}
+.auth-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:14px;padding:17px;font-weight:800;font-size:13px;text-transform:uppercase;cursor:pointer;transition:0.2s;font-family:var(--font);letter-spacing:0.05em;display:flex;align-items:center;justify-content:center;gap:8px}
 .auth-btn:disabled{opacity:0.4;cursor:not-allowed}
-.auth-err{margin-top:15px;background:var(--red-dim);color:var(--red);padding:10px;border-radius:10px;font-size:11px;display:none}
+.auth-btn:not(:disabled):hover{filter:brightness(1.1)}
+.auth-err{margin-top:14px;background:var(--red-dim);color:var(--red);padding:12px;border-radius:12px;font-size:11px;display:none;border:1px solid rgba(255,79,79,0.2)}
+.auth-note{margin-top:14px;font-size:10px;color:var(--text3);font-family:var(--mono)}
 
-/* MAIN APP */
+/* APP LAYOUT */
 #app{display:none;width:100%}
-.nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;position:fixed;height:100vh}
-.nav-item{width:60px;margin-bottom:10px;padding:12px 0;border-radius:12px;cursor:pointer;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:5px;border:none;background:none}
+.nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0;position:fixed;height:100vh;z-index:100}
+.nav-logo{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#000;margin-bottom:24px}
+.nav-item{width:58px;padding:11px 0;border-radius:12px;cursor:pointer;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:5px;border:none;background:none;font-family:var(--font);transition:0.15s;margin-bottom:6px}
+.nav-item:hover{color:var(--text2);background:rgba(255,255,255,0.04)}
 .nav-item.active{background:rgba(200,255,0,0.1);color:var(--accent)}
 .nav-label{font-size:8px;font-weight:700;text-transform:uppercase;font-family:var(--mono)}
-main{margin-left:var(--nav-w);flex:1;padding:24px 30px;max-width:1300px}
+.nav-bottom{margin-top:auto}
+main{margin-left:var(--nav-w);flex:1;padding:24px 30px;max-width:1320px;min-height:100vh}
 
-.topbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
-.sync-pill{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;border:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--text2)}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
-.sync-dot.synced{background:var(--green);box-shadow:0 0 8px var(--green)}
-.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+/* TOPBAR */
+.topbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.sync-pill{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;border:1px solid var(--border2);font-size:10px;font-family:var(--mono);color:var(--text2)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);transition:0.3s}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 8px var(--green)}
+.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite}
+.sync-dot.err{background:var(--red)}
 @keyframes pulse{50%{opacity:0.3}}
+.user-pill{font-size:10px;font-family:var(--mono);color:var(--text3);background:var(--surface2);padding:6px 14px;border-radius:100px;border:1px solid var(--border)}
 
+/* TABS */
 .tab-panel{display:none}
 .tab-panel.active{display:block}
-.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;height:fit-content}
-.lbl{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono)}
-input, select, textarea {width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);outline:none;font-family:var(--font);margin-bottom:15px}
-.btn{padding:12px 20px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:310px 1fr;gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:18px;letter-spacing:0.08em}
+label.lbl{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:7px;font-family:var(--mono);letter-spacing:0.07em}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;color:var(--text);outline:none;font-family:var(--font);margin-bottom:15px;font-size:13px;transition:0.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:rgba(200,255,0,0.03)}
+input[type=file]{padding:10px 14px;font-size:11px;color:var(--text2);cursor:pointer}
+select option{background:var(--surface2)}
+.btn{padding:12px 22px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;font-family:var(--font);letter-spacing:0.05em;transition:0.15s}
 .btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-ghost{background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--border2);background:rgba(255,255,255,0.08)}
 .btn-danger{background:var(--red-dim);color:var(--red)}
+.btn-sm{padding:7px 14px;font-size:10px}
+.btn-wide{width:100%}
 
 /* FEED */
-.feed{display:flex;flex-direction:column;gap:15px}
-.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:240px 1fr}
-.result-img{background:var(--surface2);display:flex;align-items:center;justify-content:center;min-height:280px}
-.result-img img{max-width:100%;height:auto}
-.result-info{padding:20px;display:flex;flex-direction:column;gap:10px}
-.badge{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:800;text-transform:uppercase;font-family:var(--mono)}
+.feed{display:flex;flex-direction:column;gap:16px}
+.feed-empty{text-align:center;padding:80px 40px;color:var(--text3);border:2px dashed var(--border2);border-radius:20px;font-size:13px;line-height:2}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;transition:0.2s}
+.result-card:hover{border-color:var(--border2)}
+.result-thumb{background:var(--surface2);display:flex;align-items:center;justify-content:center;min-height:260px;position:relative}
+.result-thumb img{width:100%;height:100%;object-fit:cover}
+.result-thumb .loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--surface2)}
+.result-body{padding:22px;display:flex;flex-direction:column;gap:12px}
+.result-topic{font-size:15px;font-weight:800}
+.badge{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:800;text-transform:uppercase;font-family:var(--mono);letter-spacing:0.06em}
 .badge-done{background:var(--green-dim);color:var(--green)}
-.badge-pending{background:var(--surface2);color:var(--text3)}
-.long-text{font-size:12px;color:var(--text2);line-height:1.6;max-height:150px;overflow-y:auto;border-left:2px solid var(--border);padding-left:15px}
+.badge-pending{background:rgba(255,179,71,0.1);color:var(--amber)}
+.badge-error{background:var(--red-dim);color:var(--red)}
+.caption{font-size:15px;font-weight:800;color:var(--accent);line-height:1.4}
+.caption .highlight{background:rgba(200,255,0,0.15);border-radius:4px;padding:0 3px}
+.story{font-size:12px;color:var(--text2);line-height:1.7;max-height:160px;overflow-y:auto;border-left:2px solid var(--border2);padding-left:14px}
+.meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
-/* GUILDS LIST */
-.guild-item{display:flex;align-items:center;gap:15px;padding:12px;background:var(--surface2);border-radius:12px;margin-bottom:10px}
-.guild-logo-prev{width:40px;height:40px;background:var(--surface);border-radius:8px;overflow:hidden}
-.guild-logo-prev img{width:100%;height:100%;object-fit:cover}
+/* GUILDS */
+.guild-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface2);border-radius:14px;margin-bottom:10px;border:1px solid var(--border)}
+.guild-logo{width:42px;height:42px;background:var(--surface);border-radius:10px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:18px}
+.guild-logo img{width:100%;height:100%;object-fit:cover}
+.guild-name{font-weight:700;font-size:14px}
+.guild-id{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px}
 
-.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,0.1);border-top-color:#000;border-radius:50%;animation:spin 0.8s linear infinite}
+/* KEYS & WORKERS */
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border:1px solid var(--border)}
+.list-item-label{font-size:12px;font-family:var(--mono);color:var(--text2)}
+.remove-btn{background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:6px;transition:0.15s;font-size:16px;line-height:1}
+.remove-btn:hover{color:var(--red);background:var(--red-dim)}
+
+/* PROGRESS */
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s}
+
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,0.15);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+.spinner-light{border-color:rgba(255,255,255,0.1);border-top-color:var(--accent)}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* STATUS BANNER */
+.banner{padding:12px 16px;border-radius:12px;font-size:11px;font-family:var(--mono);margin-bottom:14px;display:none}
+.banner.info{background:rgba(200,255,0,0.07);border:1px solid rgba(200,255,0,0.2);color:var(--accent)}
+.banner.err{background:var(--red-dim);border:1px solid rgba(255,79,79,0.2);color:var(--red)}
+.banner.show{display:block}
+
+hr.divider{border:0;border-top:1px solid var(--border);margin:20px 0}
 </style>
 </head>
 <body>
@@ -85,9 +137,13 @@ input, select, textarea {width:100%;background:var(--surface2);border:1px solid 
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div class="auth-logo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-    <h2 style="margin-bottom:5px">Historian Engine</h2>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:25px">CHRONICLE ARCHIVE</p>
+    <div class="auth-logo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <h2 style="font-size:20px;margin-bottom:4px">Historian Engine</h2>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:24px;font-family:var(--mono)">CHRONICLE ARCHIVE · LOCAL AUTH</p>
 
     <div class="auth-mode-switch">
       <button class="auth-mode-btn active" id="m-login" onclick="setMode('login')">Login</button>
@@ -95,367 +151,830 @@ input, select, textarea {width:100%;background:var(--surface2);border:1px solid 
     </div>
 
     <div class="pin-row">
-      <input class="pin-digit" id="p0" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p1" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p2" type="password" maxlength="1" inputmode="numeric"/>
-      <input class="pin-digit" id="p3" type="password" maxlength="1" inputmode="numeric"/>
+      <input class="pin-dot" id="p0" type="password" maxlength="1" inputmode="numeric" autocomplete="off"/>
+      <input class="pin-dot" id="p1" type="password" maxlength="1" inputmode="numeric" autocomplete="off"/>
+      <input class="pin-dot" id="p2" type="password" maxlength="1" inputmode="numeric" autocomplete="off"/>
+      <input class="pin-dot" id="p3" type="password" maxlength="1" inputmode="numeric" autocomplete="off"/>
     </div>
-    <div class="pin-status" id="pin-status"></div>
+    <div class="pin-hint" id="pin-hint">Enter your 4-digit PIN</div>
 
-    <button class="auth-btn" id="auth-btn" onclick="submitAuth()">Enter Archive</button>
+    <button class="auth-btn" id="auth-btn" onclick="submitAuth()" disabled>
+      <span id="auth-btn-text">Enter Archive</span>
+    </button>
     <div class="auth-err" id="auth-err"></div>
+    <p class="auth-note" id="auth-note">PIN is stored locally in your browser</p>
   </div>
 </div>
 
 <!-- MAIN APP -->
 <div id="app">
   <nav class="nav">
-    <div class="nav-item active" onclick="switchTab('build', this)">
+    <div class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <button class="nav-item active" id="nav-build" onclick="switchTab('build',this)" title="Build">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
       <span class="nav-label">Build</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('guilds', this)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </button>
+    <button class="nav-item" id="nav-guilds" onclick="switchTab('guilds',this)" title="Guilds">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span class="nav-label">Guilds</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('workers', this)">
+    </button>
+    <button class="nav-item" id="nav-workers" onclick="switchTab('workers',this)" title="Workers">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <span class="nav-label">Workers</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('vault', this)">
+    </button>
+    <button class="nav-item" id="nav-vault" onclick="switchTab('vault',this)" title="Vault">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <span class="nav-label">Vault</span>
-    </div>
-    <div style="margin-top:auto">
-        <button class="nav-item" onclick="location.reload()" style="color:var(--red);opacity:0.6">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
+    </button>
+    <div class="nav-bottom">
+      <button class="nav-item" onclick="logout()" title="Logout" style="color:var(--red);opacity:0.7">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="nav-label">Exit</span>
+      </button>
     </div>
   </nav>
 
   <main>
     <div class="topbar">
       <div>
-          <div style="font-weight:800; font-size:18px">Historian Engine</div>
-          <div style="font-size:9px; color:var(--text2); font-family:var(--mono)">FLUX EDITION</div>
+        <div style="font-weight:800;font-size:18px">Historian Engine</div>
+        <div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:2px">FLUX EDITION</div>
       </div>
-      <div class="sync-pill">
-          <div class="sync-dot" id="sync-dot"></div>
-          <span id="sync-label">Cloud Connected</span>
+      <div class="topbar-right">
+        <span class="user-pill" id="user-pill">PIN: ····</span>
+        <div class="sync-pill">
+          <div class="sync-dot ok" id="sync-dot"></div>
+          <span id="sync-label">Local Storage</span>
+        </div>
       </div>
     </div>
 
     <!-- BUILD TAB -->
     <div id="tab-build" class="tab-panel active">
-        <div class="grid">
-            <div class="card">
-                <label class="lbl">Page Guild</label>
-                <select id="sel-profile"><option value="">Select Guild...</option></select>
-                
-                <label class="lbl">Topic Manifest (CSV/XLSX)</label>
-                <input type="file" id="csv-input" accept=".csv,.xlsx" onchange="importTopics(this)"/>
-                
-                <button class="btn btn-primary" style="width:100%" onclick="processBatch()" id="process-btn" disabled>Process Batch</button>
-                <br/><br/>
-                <button class="btn btn-outline" style="width:100%" onclick="exportAll()">Export All (.zip)</button>
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-title">⚙ Build Controls</div>
+            <label class="lbl">Page Guild</label>
+            <select id="sel-profile">
+              <option value="">Select a Guild first...</option>
+            </select>
+
+            <label class="lbl">Topic Manifest (CSV or XLSX)</label>
+            <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" onchange="importTopics(this)"/>
+
+            <div id="topic-count" style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:15px;display:none">
+              <span id="topic-num">0</span> topics loaded
             </div>
-            <div class="feed" id="feed">
-                <div style="text-align:center; padding:100px; color:var(--text3); border:2px dashed var(--border); border-radius:20px">
-                    Ready to forge history...
-                </div>
+
+            <div class="progress-bar" id="progress-bar" style="display:none">
+              <div class="progress-fill" id="progress-fill" style="width:0%"></div>
             </div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:6px;margin-bottom:16px;display:none" id="progress-label"></div>
+
+            <button class="btn btn-primary btn-wide" id="process-btn" onclick="processBatch()" disabled>
+              ▶ Process Batch
+            </button>
+            <br/><br/>
+            <button class="btn btn-ghost btn-wide" onclick="exportAll()" id="export-btn" disabled>
+              ↓ Export Archive (.zip)
+            </button>
+          </div>
+
+          <div class="card" style="font-size:11px;color:var(--text3);font-family:var(--mono);line-height:2">
+            <div class="card-title">Requirements</div>
+            <div id="req-apikey" class="req-row">✗ Gemini API key (Vault)</div>
+            <div id="req-worker" class="req-row">✗ FLUX Worker URL (Workers)</div>
+            <div id="req-guild" class="req-row">✗ Guild registered (Guilds)</div>
+            <div id="req-topics" class="req-row">✗ Topics imported</div>
+          </div>
         </div>
+
+        <div>
+          <div class="banner" id="build-banner"></div>
+          <div class="feed" id="feed">
+            <div class="feed-empty">
+              <div style="font-size:28px;margin-bottom:12px">🏛</div>
+              Ready to forge history...<br/>
+              <span style="font-size:10px">Import topics & configure guilds to begin</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- GUILDS TAB -->
     <div id="tab-guilds" class="tab-panel">
-        <div class="grid">
-            <div class="card">
-                <label class="lbl">Guild Name</label>
-                <input type="text" id="g-name" placeholder="Ancient Rome"/>
-                <label class="lbl">Identity Sigil (Logo)</label>
-                <input type="file" id="g-logo" accept="image/*"/>
-                <button class="btn btn-primary" style="width:100%" onclick="addGuild()">Register Guild</button>
-            </div>
-            <div id="guilds-list"></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Register Guild</div>
+          <label class="lbl">Guild Name</label>
+          <input type="text" id="g-name" placeholder="e.g. Ancient Rome Chronicles"/>
+          <label class="lbl">Identity Sigil (Logo)</label>
+          <input type="file" id="g-logo" accept="image/*"/>
+          <button class="btn btn-primary btn-wide" onclick="addGuild()">+ Register Guild</button>
         </div>
+        <div>
+          <div id="guilds-list">
+            <div style="color:var(--text3);font-size:12px;padding:20px;text-align:center">No guilds yet</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- WORKERS TAB -->
     <div id="tab-workers" class="tab-panel">
-        <div class="card" style="max-width:600px">
-            <label class="lbl">Cloudflare Worker URL</label>
-            <input type="url" id="w-url" placeholder="https://flux-gen.yourname.workers.dev/"/>
-            <button class="btn btn-primary" onclick="addWorker()">Add Worker</button>
-            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0"/>
-            <div id="workers-list"></div>
+      <div style="max-width:580px">
+        <div class="card">
+          <div class="card-title">FLUX Image Workers</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Add your Cloudflare Worker URL that proxies FLUX image generation. Workers are used in round-robin order.</p>
+          <label class="lbl">Worker URL</label>
+          <div style="display:flex;gap:10px">
+            <input type="url" id="w-url" placeholder="https://flux-gen.yourname.workers.dev/" style="margin-bottom:0"/>
+            <button class="btn btn-primary" onclick="addWorker()" style="white-space:nowrap">Add</button>
+          </div>
         </div>
+        <div id="workers-list"></div>
+      </div>
     </div>
 
     <!-- VAULT TAB -->
     <div id="tab-vault" class="tab-panel">
-        <div class="card" style="max-width:600px">
-            <label class="lbl">Gemini API Key</label>
-            <div style="display:flex; gap:10px">
-                <input type="password" id="v-key" placeholder="AIza..."/>
-                <button class="btn btn-primary" onclick="addKey()">Add Key</button>
-            </div>
-            <div id="keys-list" style="margin-top:20px"></div>
+      <div style="max-width:580px">
+        <div class="card">
+          <div class="card-title">🔑 Gemini API Keys</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Keys rotate automatically during batch processing. Add multiple for higher throughput.</p>
+          <label class="lbl">API Key</label>
+          <div style="display:flex;gap:10px">
+            <input type="password" id="v-key" placeholder="AIza..." style="margin-bottom:0"/>
+            <button class="btn btn-primary" onclick="addKey()" style="white-space:nowrap">Add</button>
+          </div>
         </div>
+        <div id="keys-list"></div>
+
+        <div class="card" style="margin-top:0">
+          <div class="card-title">⚠ Danger Zone</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Clear all saved results from this archive. Keys, Guilds and Workers will remain.</p>
+          <button class="btn btn-danger" onclick="clearResults()">Clear All Results</button>
+          <button class="btn btn-danger" style="margin-left:10px" onclick="nukeAll()">Delete Entire Archive</button>
+        </div>
+      </div>
     </div>
   </main>
 </div>
 
 <script>
-// UPDATE THIS TO YOUR PROXY URL
-const PROXY = 'https://flux-proxey.shreevathsa2k27.workers.dev/';
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+// Optional: set your Cloudflare Worker proxy URL for cloud sync.
+// Leave empty ('') to use local-only mode.
+const CLOUD_PROXY = '';
 
-let userData = { apiKeys: [], profiles: [], results: [], workers: [] };
-let authMode = 'login';
+// ─── STATE ─────────────────────────────────────────────────────────────────
 let currentPin = '';
+let userData = { apiKeys:[], profiles:[], results:[], workers:[] };
 let topics = [];
+let keyIndex = 0;
+let workerIndex = 0;
+let isProcessing = false;
 
-// PIN INPUT LOGIC
-[0,1,2,3].forEach(i => {
-    const el = document.getElementById('p'+i);
-    el.addEventListener('input', () => {
-        if(el.value) el.classList.add('filled');
-        if(el.value && i<3) document.getElementById('p'+(i+1)).focus();
-        if(getPin().length === 4 && authMode === 'register') checkPinAvailability();
+// ─── PIN HELPERS ────────────────────────────────────────────────────────────
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('historian_' + pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function storageKey(pin) { return 'historian_data_' + pin.substring(0, 8); }
+
+function pinExists(pin) {
+  return localStorage.getItem('historian_pin') !== null;
+}
+
+// ─── PIN INPUT SETUP ────────────────────────────────────────────────────────
+const pinInputs = [0,1,2,3].map(i => document.getElementById('p'+i));
+
+pinInputs.forEach((el, i) => {
+  el.addEventListener('input', () => {
+    el.value = el.value.replace(/\D/g, '').slice(-1);
+    el.classList.toggle('filled', !!el.value);
+    updateAuthBtn();
+    if(el.value && i < 3) pinInputs[i+1].focus();
+  });
+  el.addEventListener('keydown', e => {
+    if(e.key === 'Backspace' && !el.value && i > 0) {
+      pinInputs[i-1].focus();
+      pinInputs[i-1].value = '';
+      pinInputs[i-1].classList.remove('filled');
+      updateAuthBtn();
+    }
+  });
+  el.addEventListener('paste', e => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    digits.split('').forEach((d, j) => {
+      if(pinInputs[i+j]) {
+        pinInputs[i+j].value = d;
+        pinInputs[i+j].classList.add('filled');
+      }
     });
-    el.addEventListener('keydown', e => {
-        if(e.key === 'Backspace' && !el.value && i>0) document.getElementById('p'+(i-1)).focus();
-    });
+    updateAuthBtn();
+  });
 });
 
-function getPin() { return [0,1,2,3].map(i=>document.getElementById('p'+i).value).join(''); }
+function getPin() { return pinInputs.map(el => el.value).join(''); }
 
+function updateAuthBtn() {
+  const full = getPin().length === 4;
+  document.getElementById('auth-btn').disabled = !full;
+}
+
+let authMode = 'login';
 function setMode(m) {
-    authMode = m;
-    document.getElementById('m-login').classList.toggle('active', m==='login');
-    document.getElementById('m-reg').classList.toggle('active', m==='register');
-    document.getElementById('auth-btn').textContent = m==='login' ? 'Enter Archive' : 'Create Archive';
-    document.getElementById('pin-status').textContent = '';
+  authMode = m;
+  document.getElementById('m-login').classList.toggle('active', m === 'login');
+  document.getElementById('m-reg').classList.toggle('active', m === 'register');
+  document.getElementById('auth-btn-text').textContent = m === 'login' ? 'Enter Archive' : 'Create Archive';
+  document.getElementById('auth-err').style.display = 'none';
+  document.getElementById('auth-note').textContent = m === 'login'
+    ? 'PIN is stored locally in your browser'
+    : 'Choose a 4-digit PIN to protect your archive';
 }
 
-async function checkPinAvailability() {
-    const pin = getPin();
-    const st = document.getElementById('pin-status');
-    st.textContent = 'Checking...';
-    try {
-        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action:'check_pin', pin}) }).then(r=>r.json());
-        st.textContent = res.available ? '✓ PIN Available' : '✗ PIN Taken';
-        st.style.color = res.available ? '#3dffa0' : '#ff4f4f';
-    } catch(e) {}
-}
-
+// ─── AUTH ───────────────────────────────────────────────────────────────────
 async function submitAuth() {
-    const pin = getPin();
-    if(pin.length < 4) return;
-    const btn = document.getElementById('auth-btn');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
-    
-    try {
-        const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: authMode, pin}) }).then(r=>r.json());
-        if(res.error) throw new Error(res.error);
-        
-        currentPin = pin;
-        await loadData();
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-    } catch(e) {
-        const err = document.getElementById('auth-err');
-        err.textContent = e.message; err.style.display = 'block';
-    } finally {
-        btn.disabled = false; btn.innerHTML = authMode==='login'?'Enter Archive':'Create Archive';
-    }
-}
+  const pin = getPin();
+  if(pin.length < 4) return;
 
-async function loadData() {
-    const res = await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'load', pin: currentPin}) }).then(r=>r.json());
-    if(res.data) userData = res.data;
+  const btn = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-err');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="border-top-color:#000"></div>';
+
+  try {
+    const hash = await hashPin(pin);
+    const storedHash = localStorage.getItem('historian_pin');
+
+    if(authMode === 'register') {
+      if(storedHash) throw new Error('An archive already exists. Login or delete it first.');
+      // Create new archive
+      localStorage.setItem('historian_pin', hash);
+      userData = { apiKeys:[], profiles:[], results:[], workers:[] };
+      saveLocal(pin);
+      currentPin = pin;
+    } else {
+      // Login
+      if(!storedHash) throw new Error('No archive found. Please register first.');
+      if(storedHash !== hash) throw new Error('Incorrect PIN. Please try again.');
+      loadLocal(pin);
+      currentPin = pin;
+    }
+
+    // Show app
+    document.getElementById('user-pill').textContent = 'PIN: ' + pin[0] + '···';
+    document.getElementById('auth-screen').classList.add('hidden');
+    setTimeout(() => {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+    }, 400);
     renderAll();
+
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    pinInputs.forEach(el => { el.value=''; el.classList.remove('filled'); });
+    pinInputs[0].focus();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span id="auth-btn-text">' + (authMode==='login'?'Enter Archive':'Create Archive') + '</span>';
+    updateAuthBtn();
+  }
 }
 
-async function saveData() {
-    document.getElementById('sync-dot').className = 'sync-dot syncing';
+// ─── LOCAL STORAGE ───────────────────────────────────────────────────────────
+function saveLocal(pin) {
+  // Strip blob URLs before saving (they're session-only)
+  const saveData = JSON.parse(JSON.stringify(userData));
+  saveData.results = saveData.results.map(r => ({
+    ...r,
+    image: r.imageData || '' // use base64 if available
+  }));
+  localStorage.setItem(storageKey(pin), JSON.stringify(saveData));
+  setSyncStatus('ok', 'Saved Locally');
+  updateRequirements();
+}
+
+function loadLocal(pin) {
+  const raw = localStorage.getItem(storageKey(pin));
+  if(raw) {
     try {
-        await fetch(PROXY, { method:'POST', body: JSON.stringify({action: 'save', pin: currentPin, data: userData}) });
-        document.getElementById('sync-dot').className = 'sync-dot synced';
-    } catch(e) {}
-}
-
-// UI LOGIC
-function switchTab(t, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-    document.getElementById('tab-'+t).classList.add('active');
-    btn.classList.add('active');
-}
-
-function renderAll() {
-    renderProfiles();
-    renderKeys();
-    renderWorkers();
-    renderFeed();
-}
-
-// PROFILE LOGIC
-async function addGuild() {
-    const name = document.getElementById('g-name').value;
-    const file = document.getElementById('g-logo').files[0];
-    if(!name) return;
-    let logo = '';
-    if(file) {
-        logo = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
+      const parsed = JSON.parse(raw);
+      userData = {
+        apiKeys: parsed.apiKeys || [],
+        profiles: parsed.profiles || [],
+        results: parsed.results || [],
+        workers: parsed.workers || []
+      };
+    } catch(e) {
+      userData = { apiKeys:[], profiles:[], results:[], workers:[] };
     }
-    userData.profiles.push({ id: Date.now(), name, logo });
-    saveData(); renderProfiles();
+  }
+}
+
+function save() {
+  saveLocal(currentPin);
+}
+
+function setSyncStatus(status, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + status;
+  lbl.textContent = label;
+}
+
+// ─── ROUTING ─────────────────────────────────────────────────────────────────
+function switchTab(t, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  btn.classList.add('active');
+}
+
+function logout() {
+  if(confirm('Log out? Your data is saved locally.')) location.reload();
+}
+
+// ─── RENDER ALL ────────────────────────────────────────────────────────────
+function renderAll() {
+  renderProfiles();
+  renderKeys();
+  renderWorkers();
+  renderFeed();
+  updateRequirements();
+}
+
+// ─── REQUIREMENTS ─────────────────────────────────────────────────────────
+function updateRequirements() {
+  const checks = {
+    'req-apikey': userData.apiKeys.length > 0,
+    'req-worker': userData.workers.length > 0,
+    'req-guild':  userData.profiles.length > 0,
+    'req-topics': topics.length > 0
+  };
+  const labels = {
+    'req-apikey': 'Gemini API key',
+    'req-worker': 'FLUX Worker URL',
+    'req-guild':  'Guild registered',
+    'req-topics': 'Topics imported'
+  };
+  let allOk = true;
+  for(const [id, ok] of Object.entries(checks)) {
+    const el = document.getElementById(id);
+    if(el) {
+      el.textContent = (ok ? '✓ ' : '✗ ') + labels[id];
+      el.style.color = ok ? 'var(--green)' : 'var(--text3)';
+    }
+    if(!ok) allOk = false;
+  }
+  document.getElementById('process-btn').disabled = !allOk || isProcessing;
+  document.getElementById('export-btn').disabled = userData.results.length === 0;
+}
+
+// ─── GUILDS ────────────────────────────────────────────────────────────────
+async function addGuild() {
+  const name = document.getElementById('g-name').value.trim();
+  if(!name) return;
+  const file = document.getElementById('g-logo').files[0];
+  let logo = '';
+  if(file) {
+    logo = await readFileAsDataURL(file);
+  }
+  userData.profiles.push({ id: Date.now(), name, logo });
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-logo').value = '';
+  save();
+  renderProfiles();
+  updateRequirements();
 }
 
 function renderProfiles() {
-    const sel = document.getElementById('sel-profile');
-    sel.innerHTML = '<option value="">Select Guild...</option>' + userData.profiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    
-    document.getElementById('guilds-list').innerHTML = userData.profiles.map(p => `
-        <div class="guild-item">
-            <div class="guild-logo-prev">${p.logo ? `<img src="${p.logo}"/>` : ''}</div>
-            <div style="flex:1"><b>${p.name}</b></div>
-            <button class="btn-danger btn" onclick="removeGuild(${p.id})">Remove</button>
-        </div>
-    `).join('');
-}
-function removeGuild(id) { userData.profiles = userData.profiles.filter(p=>p.id!==id); saveData(); renderProfiles(); }
+  const sel = document.getElementById('sel-profile');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">Select Guild...</option>' +
+    userData.profiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  if(prevVal) sel.value = prevVal;
 
-// KEY LOGIC
+  const list = document.getElementById('guilds-list');
+  if(userData.profiles.length === 0) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center">No guilds registered yet</div>';
+    return;
+  }
+  list.innerHTML = userData.profiles.map(p => `
+    <div class="guild-item">
+      <div class="guild-logo">
+        ${p.logo ? `<img src="${p.logo}" alt="${p.name}"/>` : '🏛'}
+      </div>
+      <div style="flex:1">
+        <div class="guild-name">${escHtml(p.name)}</div>
+        <div class="guild-id">ID: ${p.id}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeGuild(${p.id})">Remove</button>
+    </div>
+  `).join('');
+}
+
+function removeGuild(id) {
+  if(!confirm('Remove this guild?')) return;
+  userData.profiles = userData.profiles.filter(p => p.id !== id);
+  save(); renderProfiles(); updateRequirements();
+}
+
+// ─── API KEYS ──────────────────────────────────────────────────────────────
 function addKey() {
-    const k = document.getElementById('v-key').value;
-    if(k) { userData.apiKeys.push(k); document.getElementById('v-key').value=''; saveData(); renderKeys(); }
+  const k = document.getElementById('v-key').value.trim();
+  if(!k) return;
+  if(!k.startsWith('AIza')) { alert('That does not look like a valid Gemini API key (should start with AIza)'); return; }
+  userData.apiKeys.push(k);
+  document.getElementById('v-key').value = '';
+  save(); renderKeys(); updateRequirements();
 }
+
 function renderKeys() {
-    document.getElementById('keys-list').innerHTML = userData.apiKeys.map((k, i) => `
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px; background:var(--surface2); padding:10px; border-radius:8px">
-            <span>AIza...${k.slice(-5)}</span>
-            <button onclick="removeKey(${i})" style="color:var(--red); border:0; background:none; cursor:pointer">Remove</button>
-        </div>
-    `).join('');
+  const list = document.getElementById('keys-list');
+  if(userData.apiKeys.length === 0) {
+    list.innerHTML = '<div class="card" style="color:var(--text3);font-size:12px;margin-bottom:16px">No API keys added yet</div>';
+    return;
+  }
+  list.innerHTML = userData.apiKeys.map((k, i) => `
+    <div class="list-item">
+      <span class="list-item-label">AIza···${k.slice(-6)}</span>
+      <button class="remove-btn" onclick="removeKey(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
 }
-function removeKey(i) { userData.apiKeys.splice(i,1); saveData(); renderKeys(); }
 
-// WORKER LOGIC
+function removeKey(i) {
+  userData.apiKeys.splice(i, 1);
+  save(); renderKeys(); updateRequirements();
+}
+
+// ─── WORKERS ───────────────────────────────────────────────────────────────
 function addWorker() {
-    const u = document.getElementById('w-url').value;
-    if(u) { userData.workers.push(u); document.getElementById('w-url').value=''; saveData(); renderWorkers(); }
+  const u = document.getElementById('w-url').value.trim();
+  if(!u || !u.startsWith('http')) { alert('Please enter a valid URL starting with http'); return; }
+  userData.workers.push(u);
+  document.getElementById('w-url').value = '';
+  save(); renderWorkers(); updateRequirements();
 }
+
 function renderWorkers() {
-    document.getElementById('workers-list').innerHTML = userData.workers.map((w, i) => `
-        <div style="padding:10px; background:var(--surface2); margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between">
-            <span style="font-size:11px">${w}</span>
-            <button onclick="removeWorker(${i})" style="color:var(--red); background:none; border:0; cursor:pointer">✕</button>
-        </div>
-    `).join('');
+  const list = document.getElementById('workers-list');
+  if(userData.workers.length === 0) {
+    list.innerHTML = '<div class="card" style="color:var(--text3);font-size:12px;margin-bottom:16px">No workers added yet</div>';
+    return;
+  }
+  list.innerHTML = userData.workers.map((w, i) => `
+    <div class="list-item">
+      <span class="list-item-label" style="font-size:11px;word-break:break-all">${escHtml(w)}</span>
+      <button class="remove-btn" onclick="removeWorker(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
 }
-function removeWorker(i) { userData.workers.splice(i,1); saveData(); renderWorkers(); }
 
-// ENGINE LOGIC
+function removeWorker(i) {
+  userData.workers.splice(i, 1);
+  save(); renderWorkers(); updateRequirements();
+}
+
+// ─── TOPIC IMPORT ──────────────────────────────────────────────────────────
 function importTopics(input) {
-    const file = input.files[0];
-    if(!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    if(ext === 'csv') {
-        Papa.parse(file, { header: true, complete: (res) => { topics = res.data.map(r => r.Topic || r.topic); updateBtn(); } });
-    } else {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const wb = XLSX.read(e.target.result, { type: 'binary' });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            topics = XLSX.utils.sheet_to_json(ws).map(r => r.Topic || r.topic);
-            updateBtn();
-        };
-        reader.readAsBinaryString(file);
-    }
-}
+  const file = input.files[0];
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
 
-function updateBtn() { document.getElementById('process-btn').disabled = (topics.length === 0 || userData.profiles.length === 0 || userData.apiKeys.length === 0); }
-
-async function processBatch() {
-    const guildId = document.getElementById('sel-profile').value;
-    const guild = userData.profiles.find(p => p.id == guildId);
-    if(!guild) return;
-
-    document.getElementById('process-btn').disabled = true;
-    const feed = document.getElementById('feed');
-    feed.innerHTML = '';
-
-    for(let topic of topics) {
-        if(!topic) continue;
-        const resultId = Date.now();
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.id = 'res-' + resultId;
-        card.innerHTML = `<div class="result-img"><span class="spinner"></span></div><div class="result-info"><b>${topic}</b><span class="badge badge-pending">Processing...</span></div>`;
-        feed.prepend(card);
-
-        try {
-            // 1. Gemini Text
-            const prompt = `Write a viral historical post about ${topic} for "${guild.name}". 1 short punchy caption (max 8 words, wrap 1 word in <yellow>). 1 long detailed story (250 words). Format: JSON { "short": "", "long": "" }`;
-            const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userData.apiKeys[0]}`, {
-                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            }).then(r => r.json());
-            const text = JSON.parse(gemRes.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
-
-            // 2. FLUX Image
-            const imgRes = await fetch(userData.workers[0], {
-                method: 'POST', body: JSON.stringify({ prompt: `Cinematic historical scene of ${topic}, ultra-realistic, 4k` })
-            }).then(r => r.blob());
-            const imgUrl = URL.createObjectURL(imgRes);
-
-            // 3. Update UI
-            card.innerHTML = `
-                <div class="result-img"><img src="${imgUrl}"/></div>
-                <div class="result-info">
-                    <div style="display:flex; justify-content:space-between"><b>${topic}</b><span class="badge badge-done">Done</span></div>
-                    <div style="font-weight:800; color:var(--accent)">${text.short}</div>
-                    <div class="long-text">${text.long}</div>
-                </div>
-            `;
-            userData.results.push({ topic, short: text.short, long: text.long, image: imgUrl, guild: guild.name });
-        } catch(e) {
-            card.innerHTML += `<div style="color:var(--red); font-size:10px">Error: ${e.message}</div>`;
-        }
-    }
-    saveData();
-    document.getElementById('process-btn').disabled = false;
-}
-
-function renderFeed() {
-    if(userData.results.length === 0) return;
-    const feed = document.getElementById('feed');
-    feed.innerHTML = userData.results.map(r => `
-        <div class="result-card">
-            <div class="result-img"><img src="${r.image}"/></div>
-            <div class="result-info">
-                <div style="display:flex; justify-content:space-between"><b>${r.topic}</b><span class="badge badge-done">Saved</span></div>
-                <div style="font-weight:800; color:var(--accent)">${r.short}</div>
-                <div class="long-text">${r.long}</div>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function exportAll() {
-    if(userData.results.length === 0) return;
-    const zip = new JSZip();
-    userData.results.forEach((res, i) => {
-        zip.file(`${i}_${res.topic}.txt`, `${res.short}\n\n${res.long}`);
+  if(ext === 'csv') {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (res) => {
+        topics = res.data.map(r => r.Topic || r.topic || r.TOPIC || Object.values(r)[0]).filter(Boolean);
+        showTopicCount();
+      },
+      error: (e) => showBanner('build-banner', 'CSV parse error: ' + e.message, 'err')
     });
-    const content = await zip.generateAsync({type:"blob"});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(content);
-    link.download = "history_archive.zip";
-    link.click();
+  } else {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        topics = rows.map(r => r.Topic || r.topic || r.TOPIC || Object.values(r)[0]).filter(Boolean);
+        showTopicCount();
+      } catch(err) {
+        showBanner('build-banner', 'XLSX parse error: ' + err.message, 'err');
+      }
+    };
+    reader.readAsBinaryString(file);
+  }
 }
 
+function showTopicCount() {
+  document.getElementById('topic-count').style.display = 'block';
+  document.getElementById('topic-num').textContent = topics.length;
+  updateRequirements();
+  showBanner('build-banner', topics.length + ' topics loaded successfully', 'info');
+  setTimeout(() => hideBanner('build-banner'), 3000);
+}
+
+// ─── BATCH PROCESSOR ───────────────────────────────────────────────────────
+async function processBatch() {
+  const guildId = document.getElementById('sel-profile').value;
+  const guild = userData.profiles.find(p => p.id == guildId);
+  if(!guild) { showBanner('build-banner', 'Please select a Guild first', 'err'); return; }
+  if(!userData.apiKeys.length) { showBanner('build-banner', 'Add a Gemini API key in the Vault tab', 'err'); return; }
+  if(!userData.workers.length) { showBanner('build-banner', 'Add a FLUX Worker URL in the Workers tab', 'err'); return; }
+  if(!topics.length) { showBanner('build-banner', 'Import a topic CSV/XLSX first', 'err'); return; }
+
+  isProcessing = true;
+  document.getElementById('process-btn').disabled = true;
+  document.getElementById('process-btn').innerHTML = '<div class="spinner" style="border-top-color:#000"></div> Processing...';
+
+  const progressBar = document.getElementById('progress-bar');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  progressBar.style.display = 'block';
+  progressLabel.style.display = 'block';
+  progressLabel.parentElement.style.display = 'block';
+
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '';
+  keyIndex = 0;
+  workerIndex = 0;
+
+  for(let t = 0; t < topics.length; t++) {
+    const topic = topics[t];
+    if(!topic) continue;
+
+    const pct = Math.round((t / topics.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Processing ${t+1}/${topics.length}: ${topic}`;
+
+    const cardId = 'res-' + Date.now();
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.id = cardId;
+    card.innerHTML = `
+      <div class="result-thumb">
+        <div class="loading-overlay"><div class="spinner spinner-light"></div></div>
+      </div>
+      <div class="result-body">
+        <div class="meta-row">
+          <span class="result-topic">${escHtml(topic)}</span>
+          <span class="badge badge-pending">Generating...</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Calling Gemini...</div>
+      </div>`;
+    feed.prepend(card);
+
+    try {
+      // Round-robin key selection
+      const apiKey = userData.apiKeys[keyIndex % userData.apiKeys.length];
+      keyIndex++;
+
+      // 1. Gemini text generation
+      const prompt = `You are a viral history content creator. Write content about: "${topic}" for the page "${guild.name}".
+
+Return ONLY valid JSON (no markdown, no code fences, no extra text):
+{
+  "short": "One punchy caption under 10 words. Wrap one impactful word in <yellow> tags.",
+  "long": "A detailed, engaging historical story of exactly 200-250 words. Vivid, factual, compelling."
+}`;
+
+      const gemRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.8, maxOutputTokens: 600 }
+          })
+        }
+      ).then(r => r.json());
+
+      if(gemRes.error) throw new Error('Gemini: ' + gemRes.error.message);
+
+      const rawText = gemRes.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      let textData;
+      try {
+        // Strip markdown code fences if present
+        const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        textData = JSON.parse(cleaned);
+      } catch(pe) {
+        throw new Error('Failed to parse Gemini response as JSON. Raw: ' + rawText.slice(0, 100));
+      }
+
+      if(!textData.short || !textData.long) throw new Error('Gemini returned incomplete data');
+
+      // Update card with text while image loads
+      card.querySelector('.result-body').innerHTML = `
+        <div class="meta-row">
+          <span class="result-topic">${escHtml(topic)}</span>
+          <span class="badge badge-pending">Fetching image...</span>
+        </div>
+        <div class="caption">${formatCaption(textData.short)}</div>
+        <div class="story">${escHtml(textData.long)}</div>`;
+
+      // 2. FLUX Image generation (round-robin workers)
+      const workerUrl = userData.workers[workerIndex % userData.workers.length];
+      workerIndex++;
+
+      let imageDataUrl = '';
+      try {
+        const imgRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: `Cinematic historical scene, ${topic}, ultra-realistic, dramatic lighting, 4k, oil painting style` })
+        });
+        if(!imgRes.ok) throw new Error('Worker HTTP ' + imgRes.status);
+        const blob = await imgRes.blob();
+        // Convert to base64 for persistence
+        imageDataUrl = await blobToDataURL(blob);
+      } catch(imgErr) {
+        console.warn('Image generation failed:', imgErr.message);
+        // Continue without image — text is more important
+      }
+
+      // 3. Final card render
+      card.innerHTML = `
+        <div class="result-thumb" style="${!imageDataUrl ? 'background:var(--surface2)' : ''}">
+          ${imageDataUrl
+            ? `<img src="${imageDataUrl}" alt="${escHtml(topic)}" loading="lazy"/>`
+            : `<div style="color:var(--text3);font-size:24px;text-align:center;padding:20px">🏛<br/><span style="font-size:10px;font-family:var(--mono);display:block;margin-top:8px">No image</span></div>`
+          }
+        </div>
+        <div class="result-body">
+          <div class="meta-row">
+            <span class="result-topic">${escHtml(topic)}</span>
+            <span class="badge badge-done">Done</span>
+            <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">${guild.name}</span>
+          </div>
+          <div class="caption">${formatCaption(textData.short)}</div>
+          <div class="story">${escHtml(textData.long)}</div>
+        </div>`;
+
+      userData.results.push({
+        topic,
+        guild: guild.name,
+        short: textData.short,
+        long: textData.long,
+        imageData: imageDataUrl,
+        createdAt: new Date().toISOString()
+      });
+
+    } catch(e) {
+      card.innerHTML = `
+        <div class="result-thumb"><div style="color:var(--red);padding:20px;font-size:20px">✗</div></div>
+        <div class="result-body">
+          <div class="meta-row"><span class="result-topic">${escHtml(topic)}</span><span class="badge badge-error">Error</span></div>
+          <div style="font-size:11px;color:var(--red);font-family:var(--mono);line-height:1.6">${escHtml(e.message)}</div>
+        </div>`;
+    }
+  }
+
+  // Done
+  progressFill.style.width = '100%';
+  progressLabel.textContent = `✓ Complete — ${userData.results.length} results saved`;
+  save();
+  isProcessing = false;
+  document.getElementById('process-btn').disabled = false;
+  document.getElementById('process-btn').innerHTML = '▶ Process Batch';
+  updateRequirements();
+}
+
+// ─── FEED RENDERER ─────────────────────────────────────────────────────────
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  if(!userData.results || userData.results.length === 0) {
+    feed.innerHTML = `<div class="feed-empty"><div style="font-size:28px;margin-bottom:12px">🏛</div>Ready to forge history...<br/><span style="font-size:10px">Import topics & configure guilds to begin</span></div>`;
+    return;
+  }
+  feed.innerHTML = userData.results.map(r => `
+    <div class="result-card">
+      <div class="result-thumb">
+        ${r.imageData
+          ? `<img src="${r.imageData}" alt="${escHtml(r.topic)}" loading="lazy"/>`
+          : `<div style="color:var(--text3);font-size:22px;text-align:center;padding:20px">🏛</div>`
+        }
+      </div>
+      <div class="result-body">
+        <div class="meta-row">
+          <span class="result-topic">${escHtml(r.topic)}</span>
+          <span class="badge badge-done">Saved</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">${escHtml(r.guild || '')}</span>
+        </div>
+        <div class="caption">${formatCaption(r.short)}</div>
+        <div class="story">${escHtml(r.long)}</div>
+      </div>
+    </div>
+  `).reverse().join('');
+}
+
+// ─── EXPORT ────────────────────────────────────────────────────────────────
+async function exportAll() {
+  if(!userData.results.length) return;
+  const zip = new JSZip();
+  const folder = zip.folder('history_archive');
+
+  userData.results.forEach((r, i) => {
+    const safe = r.topic.replace(/[^a-z0-9]/gi, '_').slice(0, 40);
+    folder.file(`${String(i+1).padStart(3,'0')}_${safe}.txt`,
+      `TOPIC: ${r.topic}\nGUILD: ${r.guild || ''}\nDATE: ${r.createdAt || ''}\n\nCAPTION:\n${r.short}\n\nSTORY:\n${r.long}`);
+    if(r.imageData && r.imageData.startsWith('data:image')) {
+      const [meta, b64] = r.imageData.split(',');
+      const mime = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
+      const ext = mime.split('/')[1] || 'jpg';
+      folder.file(`${String(i+1).padStart(3,'0')}_${safe}.${ext}`, b64, { base64: true });
+    }
+  });
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'historian_archive_' + new Date().toISOString().slice(0,10) + '.zip';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+// ─── DANGER ZONE ───────────────────────────────────────────────────────────
+function clearResults() {
+  if(!confirm('Delete ALL results? This cannot be undone.')) return;
+  userData.results = [];
+  save(); renderFeed(); updateRequirements();
+}
+
+function nukeAll() {
+  if(!confirm('Delete the ENTIRE archive including keys, guilds and all results? This cannot be undone.')) return;
+  localStorage.removeItem('historian_pin');
+  localStorage.removeItem(storageKey(currentPin));
+  location.reload();
+}
+
+// ─── UTILS ─────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatCaption(text) {
+  // Convert <yellow>word</yellow> to styled span
+  return text.replace(/<yellow>(.*?)<\/yellow>/gi, '<span class="highlight">$1</span>');
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('File read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('Blob read failed'));
+    r.readAsDataURL(blob);
+  });
+}
+
+function showBanner(id, msg, type) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'banner ' + type + ' show';
+}
+
+function hideBanner(id) {
+  const el = document.getElementById(id);
+  if(el) el.className = 'banner';
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+pinInputs[0].focus();
+
+// If an archive exists, pre-select login mode
+if(localStorage.getItem('historian_pin')) {
+  document.getElementById('auth-note').textContent = 'Archive found — enter your PIN to login';
+} else {
+  // No archive yet, suggest register
+  setMode('register');
+  document.getElementById('auth-note').textContent = 'No archive found — create one with a new PIN';
+}
 </script>
 </body>
 </html>
